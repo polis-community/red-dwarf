@@ -1,3 +1,4 @@
+from numpy.typing import ArrayLike
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
@@ -70,3 +71,95 @@ def scale_projected_data(
     participant_scaling_coeffs = np.reshape(participant_scaling_coeffs, (-1, 1))
 
     return projected_data * participant_scaling_coeffs
+
+# TODO: Clean up variables and docs.
+def sparsity_aware_project_ptpt(participant_votes, statement_components, statement_means):
+    """
+    Projects a sparse vote vector into PCA space while adjusting for sparsity.
+
+    Args:
+        participant_votes: List of participant votes on each statement
+        statement_components (list[list[float]]): Two lists of floats corresponding to the two principal components
+        statement_means (list[float]): List of floats corresponding to the centers/means of each statement
+
+    Returns:
+        projected_coords (list[list[float]]): Two lists corresponding to projected xy coordinates.
+    """
+    statement_components = np.array(statement_components)  # Shape: (2, n_features)
+    statement_means = np.array(statement_means)  # Shape: (n_features,)
+
+    n_statements = len(participant_votes)
+
+    participant_votes = np.array(participant_votes)
+    mask = ~np.isnan(participant_votes)  # Only consider non-null values
+
+    # Extract relevant values
+    x_vals = participant_votes[mask] - statement_means[mask]  # Centered values
+    pc1_vals, pc2_vals = statement_components[:, mask]  # Select only used components
+
+    # Compute dot product projection
+    p1 = np.dot(x_vals, pc1_vals)
+    p2 = np.dot(x_vals, pc2_vals)
+
+    n_votes = np.count_nonzero(mask)  # Non-null votes count
+    scale = np.sqrt(n_statements / max(n_votes, 1))
+
+    projected_coord = scale * np.array([p1, p2])
+
+    return projected_coord
+
+# TODO: Clean up variables and docs.
+def sparsity_aware_project_ptpts(vote_matrix, statement_components, statement_means):
+    """
+    Apply sparsity-aware projection to multiple vote vectors.
+    """
+    return np.array([
+        sparsity_aware_project_ptpt(participant_votes, statement_components, statement_means)
+        for participant_votes in vote_matrix]
+    )
+
+# TODO: Clean up variables and docs.
+def pca_project_cmnts(statement_components, statement_means):
+    """
+    Projects unit vectors for each feature into PCA space to understand their placement.
+    """
+    n_statements = len(statement_means)
+    # Create a matrix of virtual participants that each vote once on a single statement.
+    virtual_vote_matrix = np.full(shape=[n_statements, n_statements], fill_value=np.nan)
+    for i in range(n_statements):
+        # TODO: Why does Polis use -1 (disagree) here? is it the same? BUG?
+        virtual_vote_matrix[i][i] = -1  # Create unit vector representation
+
+    # 40 xy pairs. shape (40, 2)
+    statement_projections = sparsity_aware_project_ptpts(
+        virtual_vote_matrix,
+        statement_components,
+        statement_means,
+    )
+
+    return statement_projections
+
+def calculate_extremity(projections: ArrayLike):
+    # Compute extremity as vector magnitude on rows.
+    # vector magnitude = Euclidean norm = hypotenuse of xy
+    return np.linalg.norm(projections, axis=0)
+
+# TODO: Clean up variables and docs.
+def with_proj_and_extremity(pca):
+    """
+    Compute projection and extremity, then merge into PCA results.
+    """
+    statement_projections = pca_project_cmnts(
+        statement_components=pca["comps"],
+        statement_means=pca["center"],
+    )
+    # Flip the axes to get all x together and y together.
+    # 2 sets of 40. shape (2, 40)
+    statement_projections = statement_projections.transpose()
+
+    statement_extremities = calculate_extremity(statement_projections)
+
+    pca["comment-projection"] = statement_projections.tolist()
+    pca["comment-extremity"] = statement_extremities.tolist()
+
+    return pca

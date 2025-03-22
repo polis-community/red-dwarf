@@ -3,7 +3,6 @@ from reddwarf.exceptions import RedDwarfError
 
 import pytest
 from pandas.testing import assert_frame_equal
-from numpy.testing import assert_allclose
 import pandas as pd
 from collections import namedtuple
 from random import shuffle

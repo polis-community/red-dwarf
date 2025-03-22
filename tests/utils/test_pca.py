@@ -129,3 +129,18 @@ def test_run_pca_real_data_testing():
 @pytest.mark.skip
 def test_scale_projected_data():
     raise
+
+@pytest.mark.parametrize("polis_convo_data", ["small"], indirect=True)
+def test_with_proj_and_extremity(polis_convo_data):
+    math_data, _, _ = polis_convo_data
+    expected_pca = math_data["pca"]
+
+    pca = {
+        "center": math_data["pca"]["center"],
+        "comps": math_data["pca"]["comps"],
+    }
+
+    calculated_pca = PcaUtils.with_proj_and_extremity(pca)
+
+    assert expected_pca["comment-projection"] == calculated_pca["comment-projection"]
+    assert expected_pca["comment-extremity"] == calculated_pca["comment-extremity"]

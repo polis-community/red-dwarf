@@ -66,13 +66,15 @@ if True:
         client.find_optimal_k()  # Find optimal number of clusters
         cluster_labels = client.optimal_cluster_labels
 
-    grouped_stats_df = utils.calculate_comment_statistics_by_group(
+    grouped_stats_df, gac_df = utils.calculate_comment_statistics_dataframes(
         vote_matrix=vote_matrix,
         cluster_labels=cluster_labels, # type:ignore
     )
     polis_repness = utils.select_representative_statements(grouped_stats_df=grouped_stats_df)
-
     print(json.dumps(polis_repness, indent=2))
+
+    # Group-aware consensus
+    print(gac_df)
 
     presenter = DataPresenter(client=client)
     presenter.render_optimal_cluster_figure()
