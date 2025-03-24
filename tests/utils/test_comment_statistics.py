@@ -33,7 +33,7 @@ def test_calculate_representativeness_real_data(polis_convo_data):
     vote_matrix = client.get_matrix(is_filtered=True)
 
     # Generate stats all groups and all statements.
-    grouped_stats_df = utils.calculate_comment_statistics_by_group(
+    grouped_stats_df, gac_df = utils.calculate_comment_statistics_dataframes(
         vote_matrix=vote_matrix,
         cluster_labels=cluster_labels,
     )

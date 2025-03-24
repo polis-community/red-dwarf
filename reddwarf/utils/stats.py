@@ -4,6 +4,7 @@ from numpy.typing import ArrayLike, NDArray
 from typing import Tuple, Optional
 from types import SimpleNamespace
 from scipy.stats import norm
+from reddwarf.utils import stats
 from reddwarf.utils.matrix import VoteMatrix
 from reddwarf.types.polis import (
     PolisRepness,
@@ -33,27 +34,35 @@ def two_prop_test(
     # Ported with adaptation from Polis
     # See: https://github.com/compdemocracy/polis/blob/90bcb43e67dad660629e0888fedc0d32379f375d/math/src/polismath/math/stats.clj#L18-L33
 
+    succ_in, succ_out, n_in, n_out = map(np.asarray, (succ_in, succ_out, n_in, n_out))
     # Laplace smoothing (add 1 to each count)
-    succ_in = np.asarray(succ_in) + 1
-    succ_out = np.asarray(succ_out) +  1
-    n_in = np.asarray(n_in) +  1
-    n_out = np.asarray(n_out) +  1
+    succ_in += 1
+    succ_out += 1
+    # BUG: Why can't these be switched to += operator and still match polismath output?
+    n_in = n_in + 1
+    n_out = n_out + 1
 
     # Compute proportions
     pi1 = succ_in / n_in
     pi2 = succ_out / n_out
     pi_hat = (succ_in + succ_out) / (n_in + n_out)
 
-    # Handle edge case when pi_hat == 1
-    # TODO: Handle when divide by zero.
-    if np.any(pi_hat == 1):
-        # XXX: Not technically correct; limit-based solution needed.
-        return np.where(pi_hat == 1, 0, (pi1 - pi2) / np.sqrt(pi_hat * (1 - pi_hat) * (1 / n_in + 1 / n_out)))
-
-    # Compute the test statistic
     denominator = np.sqrt(pi_hat * (1 - pi_hat) * (1 / n_in + 1 / n_out))
 
-    return (pi1 - pi2) / denominator
+    # Compute the test statistic.
+    # Suppress divide-by-zero errors, because we correct them below.
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = (pi1 - pi2) / denominator
+
+
+    return np.where(
+        # Handle edge-case when pi_hat == 1 (would be divide-by-zero error)
+        pi_hat == 1,
+        # If calculate derivative, the limit is approaching zero here.
+        0,
+        # Handle everything else.
+        result,
+    )
 
 def is_significant(z_val: float, confidence: float = 0.90) -> bool:
     """Test whether z-statistic is significant at 90% confidence (one-tailed, right-side)."""
@@ -139,15 +148,15 @@ def count_agree(values: ArrayLike) -> np.int64 | NDArray[np.int64]:
 def count_all_votes(values: ArrayLike) -> np.int64 | NDArray[np.int64]:
     return count_votes(values)
 
-def probability(count, total, pseudo_count=1):
+def probability(count, total, pseudo_count: ArrayLike = 1):
     """Probability with Laplace smoothing"""
-    return (pseudo_count + count ) / (2*pseudo_count + total)
+    return (pseudo_count + count ) / (np.multiply(pseudo_count, 2) + total)
 
 def calculate_comment_statistics(
     vote_matrix: VoteMatrix,
     cluster_labels: list[int] | NDArray[np.integer],
     pseudo_count: int = 1,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Calculates comparative statement statistics across all votes and groups, using only efficient numpy operations.
 
@@ -173,6 +182,7 @@ def calculate_comment_statistics(
         R_v_g_c (np.ndarray[float]): numpy matrix with representativeness of vote types on comments/groups
         P_v_g_c_test (np.ndarray[float]): test z-scores for probability of votes/comments/groups
         R_v_g_c_test (np.ndarray[float]): test z-scores for representativeness of votes/comments/groups
+        C_v_c (np.ndarray[float]): group-aware consensus scores for each statement.
     """
     # Get the vote matrix values
     X = vote_matrix.values
@@ -187,6 +197,7 @@ def calculate_comment_statistics(
     R_v_g_c = np.empty([len(votes.__dict__), group_count, len(statement_ids)])
     P_v_g_c_test = np.empty([len(votes.__dict__), group_count, len(statement_ids)])
     R_v_g_c_test = np.empty([len(votes.__dict__), group_count, len(statement_ids)])
+    C_v_c = np.empty([len(votes.__dict__), len(statement_ids)])
 
     for gid in range(group_count):
         # Create mask for the participants in target group
@@ -232,6 +243,12 @@ def calculate_comment_statistics(
         R_v_g_c_test[votes.A, gid, :] = two_prop_test(n_agree_in_group, n_agree_out_group, n_votes_in_group, n_votes_out_group)       # rat
         R_v_g_c_test[votes.D, gid, :] = two_prop_test(n_disagree_in_group, n_disagree_out_group, n_votes_in_group, n_votes_out_group) # rdt
 
+    # Calculate group-aware consensus
+    # For each statement, multiply probabilities across groups (aka the first axis=0)
+    # Reference: https://github.com/compdemocracy/polis/blob/edge/math/src/polismath/math/conversation.clj#L615-L636
+    C_v_c[votes.A, :] = P_v_g_c[votes.A, :, :].prod(axis=0)
+    C_v_c[votes.D, :] = P_v_g_c[votes.D, :, :].prod(axis=0)
+
     return (
         N_g_c, # ns
         N_v_g_c, # na / nd
@@ -239,6 +256,7 @@ def calculate_comment_statistics(
         R_v_g_c, # ra / rd
         P_v_g_c_test, # pat / pdt
         R_v_g_c_test, # rat / rdt
+        C_v_c, # gac
     )
 
 def finalize_cmt_stats(statement: pd.Series) -> PolisRepnessStatement:
@@ -269,13 +287,15 @@ def finalize_cmt_stats(statement: pd.Series) -> PolisRepnessStatement:
         "repful-for":   vals[6], # type:ignore
     }
 
-def calculate_comment_statistics_by_group(
+def calculate_comment_statistics_dataframes(
     vote_matrix: VoteMatrix,
     cluster_labels: list[int] | NDArray[np.integer],
     pseudo_count: int = 1,
-) -> list[pd.DataFrame]:
+) -> Tuple[list[pd.DataFrame], pd.DataFrame]:
     """
     Calculates comparative statement statistics across all votes and groups, generating dataframes.
+
+    This returns both group-specific statistics, and also overall stats (group-aware consensus).
 
     Args:
         vote_matrix (VoteMatrix): The vote matrix where rows are voters, columns are statements,
@@ -284,9 +304,10 @@ def calculate_comment_statistics_by_group(
         pseudo_count (int): Smoothing parameter to avoid division by zero. Default is 1.
 
     Returns:
-        pd.DataFrame: DataFrame containing verbose statistics for each statement.
+        list[pd.DataFrame]: DataFrames containing verbose statistics for each statement, keyed to group ID.
+        pd.DataFrame: DataFrame containing group-aware consensus scores for each statement.
     """
-    N_g_c, N_v_g_c, P_v_g_c, R_v_g_c, P_v_g_c_test, R_v_g_c_test = calculate_comment_statistics(
+    N_g_c, N_v_g_c, P_v_g_c, R_v_g_c, P_v_g_c_test, R_v_g_c_test, C_v_c = calculate_comment_statistics(
         vote_matrix=vote_matrix,
         cluster_labels=cluster_labels,
         pseudo_count=pseudo_count,
@@ -309,11 +330,80 @@ def calculate_comment_statistics_by_group(
             'rdt': R_v_g_c_test[votes.D, group_id, :], # repress of disagree test z-score
         }, index=vote_matrix.columns)
 
-    return group_stats
+    group_aware_consensus_df = pd.DataFrame(C_v_c[votes.A, :], index=vote_matrix.columns)
+
+    return group_stats, group_aware_consensus_df
 
 def repness_metric(df: pd.DataFrame) -> pd.Series:
     metric = df["repness"] * df["repness-test"] * df["p-success"] * df["p-test"]
     return metric
+
+# Reference: https://github.com/compdemocracy/polis/blob/fd440c3e3ca302d08ce3cca870fc39b834c96b86/math/src/polismath/math/conversation.clj#L308C1-L312C28
+def importance_metric(
+    n_agree: ArrayLike,
+    n_disagree: ArrayLike,
+    n_total: ArrayLike,
+    extremity: ArrayLike,
+    pseudo_count: ArrayLike = 1,
+) -> np.ndarray:
+    n_agree, n_disagree, n_total, extremity = map(np.asarray, (n_agree, n_disagree, n_total, extremity))  # Ensure inputs are NumPy arrays
+    n_pass = n_total - (n_agree + n_disagree)
+    prob_agree = probability(n_agree, n_total, pseudo_count)
+    prob_pass = probability(n_pass, n_total, pseudo_count)
+    # Form in the academic paper:
+    # importance = prob_agree * (1 - prob_pass) * (1 + extremity)
+    prob_engagement = 1 - prob_pass
+    # This is what happens:
+    #   - total agreement scales by 1 (disagreement down-scales)
+    #   - total engagement (agree or disagree) scales by 1 (passing down-scales)
+    #   - if a virtual participant who only votes agree on this statement
+    #     does not move from the center, this statement scales by 1.
+    #     The more they would travel from the center, the more the statement up-scales.
+    #     (The more a statement contributes to principal components, the more upscaling.)
+    importance = prob_agree * prob_engagement * (1 + extremity)
+    return importance
+
+# Reference: https://github.com/compdemocracy/polis/blob/fd440c3e3ca302d08ce3cca870fc39b834c96b86/math/src/polismath/math/conversation.clj#L318-L327
+def priority_metric(
+    is_meta: ArrayLike,
+    n_agree: ArrayLike,
+    n_disagree: ArrayLike,
+    n_total: ArrayLike,
+    extremity: ArrayLike,
+    # This might need tuning.
+    meta_priority: int = 7,
+    pseudo_count: ArrayLike = 1,
+) -> np.ndarray:
+    """
+    Calculate comment priority metric for any single statement of lists of statements.
+
+    Args:
+        is_meta (bool | list[bool]): Whether statement is marked as metadata
+        n_agree (int | list[int]): Number of agree votes
+        n_disagree (int | list[int]): Number of disagree votes
+        n_total (int | list[int]): Number of total votes (agree/disagree/pass)
+        extremity (float | list[float]): Euclidean distance of a single-voting participant from origin
+        meta_priority (int): Unbiased (pre-squared) priority metric used for meta statements
+        pseudo_count (int | list[int]): pseudo-count value for Laplace smoothing
+    Returns:
+        float | np.ndarray[float]: A priority metric score between 0 and infinity.
+    """
+    # Ensure inputs are NumPy arrays
+    n_agree, n_disagree, n_total, extremity = map(np.asarray, (n_agree, n_disagree, n_total, extremity))
+    importance = importance_metric(n_agree, n_disagree, n_total, extremity, pseudo_count)
+    # Form in the academic paper: (transformed)
+    # newness_scale_factor = 1 + 2**(3 - (n_total/5)))
+    # newness_scale_factor = 1 + 2**3 * (2**(-(n_total/5)))
+    # newness_scale_factor = 1 + 8    * (2**(-(n_total/5)))
+    NO_VOTES_SCALE_FACTOR = 9
+    newness_scale_factor = 1 + (NO_VOTES_SCALE_FACTOR - 1) * np.power(2, -(n_total/5))
+    priority = importance * newness_scale_factor
+
+    # Assign meta priority where is_meta is True
+    priority = np.where(is_meta, meta_priority, priority)
+
+    boosted_bias_priority = np.power(priority, 2)
+    return boosted_bias_priority
 
 # Figuring out select-rep-comments flow
 # See: https://github.com/compdemocracy/polis/blob/7bf9eccc287586e51d96fdf519ae6da98e0f4a70/math/src/polismath/math/repness.clj#L209C7-L209C26
