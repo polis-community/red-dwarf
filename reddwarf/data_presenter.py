@@ -56,8 +56,9 @@ def generate_figure(
                 # TODO: Accomodate 2 points like Polis platform does.
                 print("Cannot create concave hull for less than 3 points. Skipping...")
                 continue
-            vertex_indices = concave_hull_indexes(np.asarray(points_df), concavity=4.0)
+            vertex_indices = concave_hull_indexes(np.asarray(points_df.loc[:, ["x", "y"]]), concavity=4.0)
             hull_points = points_df.iloc[vertex_indices, :]
+            hull_points = hull_points.loc[:, ["x", "y"]]
             polygon = patches.Polygon(
                 hull_points,
                 fill=True,

@@ -141,17 +141,21 @@ def get_unvoted_statement_ids(vote_matrix: VoteMatrix) -> List[int]:
 
 def simple_filter_matrix(
         vote_matrix: VoteMatrix,
-        statement_ids_mod_out: list[int] = [],
+        mod_out_statement_ids: list[int] = [],
 ) -> VoteMatrix:
     """
     The simple filter on the vote_matrix that is used by Polis prior to running PCA.
     """
-    for tid in statement_ids_mod_out:
+    for tid in mod_out_statement_ids:
         # Zero out column only if already exists (ie. has votes)
         if tid in vote_matrix.columns:
             vote_matrix.loc[:, tid] = 0
 
     return vote_matrix
+
+def get_participant_ids(vote_matrix, vote_threshold):
+    return vote_matrix[vote_matrix.count(axis="columns") >= vote_threshold].index.to_list()
+
 
 def filter_matrix(
         vote_matrix: VoteMatrix,
@@ -183,13 +187,12 @@ def filter_matrix(
     vote_matrix = vote_matrix.filter(active_statement_ids, axis='columns')
     # Filter out participants with less than 7 votes (keeping IDs we're forced to)
     # Ref: https://hyp.is/JbNMus5gEe-cQpfc6eVIlg/gwern.net/doc/sociology/2021-small.pdf
-    participant_ids_meeting_vote_thresh = vote_matrix[vote_matrix.count(axis="columns") >= min_user_vote_threshold].index.to_list()
+    participant_ids_in = get_participant_ids(vote_matrix, min_user_vote_threshold)
     # Add in some specific participant IDs for Polismath edge-cases.
     # See: https://github.com/compdemocracy/polis/pull/1893#issuecomment-2654666421
-    participant_ids_in = participant_ids_meeting_vote_thresh + keep_participant_ids
-    participant_ids_in_unique = list(set(participant_ids_in))
+    participant_ids_in = list(set(participant_ids_in + keep_participant_ids))
     vote_matrix = (vote_matrix
-        .filter(participant_ids_in_unique, axis='rows')
+        .filter(participant_ids_in, axis='rows')
         # .filter() and .drop() lost the index name, so bring it back.
         .rename_axis("participant_id")
     )

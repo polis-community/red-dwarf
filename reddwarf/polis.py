@@ -1,4 +1,4 @@
-import pandas as pd # For sake of clean diffs
+import pandas as pd
 from collections import defaultdict
 from reddwarf.data_loader import Loader
 from reddwarf.models import ModeratedEnum
@@ -6,6 +6,12 @@ from reddwarf import utils
 from typing import Optional
 
 class PolisClient():
+    """
+    This is a heavy class-based implementation of Polis.
+
+    This will likely be deprecated in favour of using small pure, stateless
+    functions, as exemplified in `reddwarf.implementations.polis`.
+    """
     def __init__(self, is_strict_moderation: Optional[bool] = None) -> None:
         self.data_loader = None
         self.n_components = 2
@@ -196,7 +202,7 @@ class PolisClient():
         self.base_clusters = self.data_loader.math_data["base-clusters"]
 
     def find_optimal_k(self):
-        best_k, silhouette_score, cluster_labels = utils.find_optimal_k(
+        best_k, silhouette_score, cluster_labels, _ = utils.find_optimal_k(
             projected_data=self.projected_data,
             max_group_count=self.max_group_count,
             debug=True,
@@ -223,11 +229,6 @@ class PolisClient():
         self.add_votes_batch(votes_df)
 
     def load_comments_data(self, data=None):
-        statements_df = (pd.DataFrame
-            .from_records(data)
-            .set_index('statement_id')
-            .sort_index()
-        )
 
         def is_shown(statement):
             if self.get_is_strict_moderation():
@@ -237,20 +238,7 @@ class PolisClient():
             is_shown = statement["moderated"] in active_mod_states
             return is_shown
 
+        statements_df, self.mod_in, self.mod_out, self.meta_tids = utils.process_statements(data)
         statements_df["is_shown"] = statements_df.apply(is_shown, axis="columns")
-        for i, row in statements_df.iterrows():
-            # TODO: Why does is_meta make this mod-in.
-            # Maybe I don't understand what mod-in does...
-            # Note: mod-in/mod-out doesn't seem to be actually used in the front-end, so a bug here wouldn't matter.
-            # Ref: https://github.com/compdemocracy/polis/blob/6d04f4d144adf9640fe49b8fbaac38943dc11b9a/math/src/polismath/math/conversation.clj#L825-L842
-            if row['is_meta'] or row['moderated'] == 1:
-                self.mod_in.append(i)
-
-            if row['is_meta'] or row['moderated'] == -1:
-                self.mod_out.append(i)
-
-            # Ref: https://github.com/compdemocracy/polis/blob/6d04f4d144adf9640fe49b8fbaac38943dc11b9a/math/src/polismath/math/conversation.clj#L843-L850
-            if row['is_meta']:
-                self.meta_tids.append(i)
 
         self.statements_df = statements_df

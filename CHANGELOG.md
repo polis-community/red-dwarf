@@ -2,6 +2,18 @@
 
 ## [Unreleased][] (YYYY-MM-DD)
 
+### Fixes
+- Allow `is_strict_moderation` to be inferred from not just API data, but file data.
+
+### Changes
+- Fixed participant projections to map more closely to Polis with `utils.pca.sparsity_aware_project_ptpt()`.
+- Add simple Polis implementation in `reddwarf.implementations.polis`.
+
+### Chores
+- Moved agora implementation from `reddwarf.agora` to `reddwarf.implementations.agora` (deprecation warning).
+- Add missing `conversation.json` fixture file.
+- Extract statement processing from polis class-based client to pure util function.
+
 ## [0.2.0][] (2025-03-24)
 ### Fixed
 - Relax seaborn version constraint to be compatible with TabPFN. ([#16](https://github.com/polis-community/red-dwarf/issues/16))

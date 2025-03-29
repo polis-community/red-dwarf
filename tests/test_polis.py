@@ -125,6 +125,16 @@ def test_infer_moderation_type_from_api():
     client.load_data(conversation_id="9knpdktubt")
     assert client.is_strict_moderation is not None
 
+# TODO: Label parametrized data by "strict" vs "non-strict" moderation.
+@pytest.mark.parametrize("polis_convo_data", ["small"], indirect=True)
+def test_infer_moderation_type_from_file(polis_convo_data):
+    _, path, _ = polis_convo_data
+
+    client = PolisClient()
+    assert client.is_strict_moderation is None
+    client.load_data(filepaths=[f'{path}/conversation.json'])
+    assert client.is_strict_moderation is not None
+
 def test_load_data_from_report_id():
     client = PolisClient()
     client.load_data(report_id="r5hr48j8y8mpcffk7crmk")

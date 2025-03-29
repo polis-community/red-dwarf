@@ -166,6 +166,8 @@ class Loader():
                 self.load_file_data_votes(file=f)
             elif f.endswith("comments.json"):
                 self.load_file_data_comments(file=f)
+            elif f.endswith("conversation.json"):
+                self.load_file_data_conversation(file=f)
             else:
                 raise ValueError("Unknown file type")
 
@@ -182,6 +184,12 @@ class Loader():
 
         comments_data = [Statement(**c).model_dump(mode='json') for c in comments_data]
         self.comments_data = comments_data
+
+    def load_file_data_conversation(self, file=None):
+        with open(file) as f:
+            convo_data = json.load(f)
+
+        self.conversation_data = convo_data
 
     def load_api_data(self):
         if self.report_id:

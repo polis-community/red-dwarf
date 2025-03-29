@@ -30,12 +30,8 @@ def expand_group_clusters_with_participants(
     Returns:
         group_clusters_with_participant_ids (list[PolisGroupClusterExpanded]): A list of group clusters with participant IDs.
     """
-    # Extract base clusters and their members
-    base_cluster_ids = base_clusters["id"]
-    base_cluster_participant_ids = base_clusters["members"]
-
     # Create a mapping from base cluster ID to member participant IDs
-    base_to_participant_mapping = dict(zip(base_cluster_ids, base_cluster_participant_ids))
+    _, base_cluster_to_participant_map = create_bidirectional_id_maps(base_clusters)
 
     # Create the new group-clusters-participant list
     group_clusters_with_participant_ids = []
@@ -45,7 +41,7 @@ def expand_group_clusters_with_participants(
         group_participant_ids = [
             participant_id
             for base_cluster_id in group["members"]
-            for participant_id in base_to_participant_mapping[base_cluster_id]
+            for participant_id in base_cluster_to_participant_map[base_cluster_id]
         ]
 
         # Create the new group object with expanded participant IDs
@@ -133,3 +129,26 @@ def extract_data_from_polismath(math_data: Any) -> Tuple[list[ParticipantId], ND
     cluster_labels = generate_cluster_labels(group_clusters_with_pids)
 
     return grouped_participant_ids, cluster_labels
+
+def create_bidirectional_id_maps(base_clusters):
+    """
+    Create bidirectional mappings between base_cluster_id and participant_ids.
+
+    Args:
+        base_clusters (dict): Dictionary containing 'id' and 'members' lists
+
+    Returns:
+        tuple (participant_to_base_cluster, base_cluster_to_participants): maps going in either direction
+    """
+    participant_to_base_cluster = {
+        participant: base_cluster
+        for base_cluster, members in zip(base_clusters['id'], base_clusters['members'])
+        for participant in members
+    }
+
+    base_cluster_to_participants = {
+        base_cluster: members
+        for base_cluster, members in zip(base_clusters['id'], base_clusters['members'])
+    }
+
+    return participant_to_base_cluster, base_cluster_to_participants

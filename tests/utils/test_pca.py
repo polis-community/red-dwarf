@@ -44,7 +44,7 @@ def test_run_pca_real_data_below_100_participants(polis_convo_data):
     expected_pca = math_data["pca"]
 
     # Just fetch the moderated out statements from polismath (no need to recalculate here)
-    statement_ids_mod_out = math_data["mod-out"]
+    mod_out_statement_ids = math_data["mod-out"]
 
     client = PolisClient()
     client.load_data(filepaths=[f"{data_path}/votes.json"])
@@ -52,16 +52,16 @@ def test_run_pca_real_data_below_100_participants(polis_convo_data):
 
     real_vote_matrix = MatrixUtils.simple_filter_matrix(
         vote_matrix=real_vote_matrix,
-        statement_ids_mod_out=statement_ids_mod_out,
+        mod_out_statement_ids=mod_out_statement_ids,
     )
 
     _, actual_components, _, actual_means = PcaUtils.run_pca(vote_matrix=real_vote_matrix)
 
-    # We test absolute because PCA methods don't always give the same sign, and can flip.
-    assert np.absolute(actual_components[0]) == pytest.approx(np.absolute(expected_pca["comps"][0]))
-    assert np.absolute(actual_components[1]) == pytest.approx(np.absolute(expected_pca["comps"][1]))
-
-    assert np.absolute(actual_means) == pytest.approx(np.absolute(expected_pca["center"]))
+    # Some signs are flipped for the "small" fixture data, because signs are arbitrary in PCA.
+    # If we initialize differently later on, it should flip and match.
+    assert actual_components[0] == pytest.approx(expected_pca["comps"][0])
+    assert actual_components[1] == pytest.approx(expected_pca["comps"][1])
+    assert -actual_means == pytest.approx(expected_pca["center"])
 
 @pytest.mark.parametrize("polis_convo_data", ["medium"], indirect=True)
 def test_run_pca_real_data_above_100_participants(polis_convo_data):
@@ -69,7 +69,7 @@ def test_run_pca_real_data_above_100_participants(polis_convo_data):
     expected_pca = math_data["pca"]
 
     # Just fetch the moderated out statements from polismath (no need to recalculate here)
-    statement_ids_mod_out = math_data["mod-out"]
+    mod_out_statement_ids = math_data["mod-out"]
 
     client = PolisClient()
     client.load_data(filepaths=[f"{data_path}/votes.json"])
@@ -77,16 +77,16 @@ def test_run_pca_real_data_above_100_participants(polis_convo_data):
 
     real_vote_matrix = MatrixUtils.simple_filter_matrix(
         vote_matrix=real_vote_matrix,
-        statement_ids_mod_out=statement_ids_mod_out,
+        mod_out_statement_ids=mod_out_statement_ids,
     )
 
     _, actual_components, _, actual_means = PcaUtils.run_pca(vote_matrix=real_vote_matrix)
 
-    # We test absolute because PCA methods don't always give the same sign, and can flip.
-    assert np.absolute(actual_components[0]) == pytest.approx(np.absolute(expected_pca["comps"][0]))
-    assert np.absolute(actual_components[1]) == pytest.approx(np.absolute(expected_pca["comps"][1]))
-
-    assert np.absolute(actual_means) == pytest.approx(np.absolute(expected_pca["center"]))
+    # Some signs are flipped for the "medium" fixture data, because signs are arbitrary in PCA.
+    # If we initialize differently later on, it should flip and match.
+    assert -actual_components[0] == pytest.approx(expected_pca["comps"][0])
+    assert actual_components[1] == pytest.approx(expected_pca["comps"][1])
+    assert actual_means == pytest.approx(expected_pca["center"])
 
 # TODO: Find a good place to run integration tests against real remote datasets.
 @pytest.mark.skip
@@ -121,6 +121,7 @@ def test_run_pca_real_data_testing():
     # powerit_pca = PcaUtils.powerit_pca(real_vote_matrix.values)
 
     # We test absolute because PCA methods don't always give the same sign, and can flip.
+    # TODO: Try to remove this.
     assert np.absolute(actual_components[0]) == pytest.approx(np.absolute(expected_pca["comps"][0]))
     assert np.absolute(actual_components[1]) == pytest.approx(np.absolute(expected_pca["comps"][1]))
 
