@@ -6,7 +6,8 @@ from requests_ratelimiter import SQLiteBucket, LimiterSession
 import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
-from reddwarf.helpers import RedDwarfSession, CloudflareBypassHTTPAdapter
+from reddwarf.requests.session import RedDwarfSession
+from reddwarf.requests.adapters import CloudflareBypassHTTPAdapter
 
 ua = UserAgent()
 
