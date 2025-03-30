@@ -39,6 +39,7 @@ dev = [
     "mkdocstrings-python>=1.15.0",
     "nbmake>=1.5.5",
     "pytest-cov>=6.0.0",
+    "requests-ip-rotator>=1.0.14",
 ]
 
 [project.optional-dependencies]

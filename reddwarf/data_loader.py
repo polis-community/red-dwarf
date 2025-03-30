@@ -6,7 +6,7 @@ from requests_ratelimiter import SQLiteBucket, LimiterSession
 import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
-from reddwarf.helpers import CachedLimiterSession, CloudflareBypassHTTPAdapter
+from reddwarf.helpers import RedDwarfSession, CloudflareBypassHTTPAdapter
 
 ua = UserAgent()
 
@@ -68,7 +68,7 @@ class Loader():
         # Throttle requests, but disable when response is already cached.
         if self.is_cache_enabled:
             # Source: https://github.com/JWCook/requests-ratelimiter/tree/main?tab=readme-ov-file#custom-session-example-requests-cache
-            self.session = CachedLimiterSession(
+            self.session = RedDwarfSession(
                 per_second=5,
                 expire_after=timedelta(hours=1),
                 cache_name="test_cache.sqlite",
@@ -79,6 +79,7 @@ class Loader():
                     'check_same_thread': False,
                 },
             )
+            self.session.use_ip_rotation(self.polis_instance_url)
         else:
             self.session = LimiterSession(per_second=5)
         adapter = CloudflareBypassHTTPAdapter()
