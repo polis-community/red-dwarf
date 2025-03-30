@@ -2,7 +2,7 @@ import json
 import os
 from fake_useragent import UserAgent
 from datetime import timedelta
-from requests_ratelimiter import SQLiteBucket, LimiterSession
+from requests_ratelimiter import SQLiteBucket
 import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
