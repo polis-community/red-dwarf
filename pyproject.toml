@@ -18,6 +18,7 @@ dependencies = [
     "concave-hull>=0.0.9",
     "seaborn>=0.12",
     "pydantic>=2.10.6",
+    "requests-ip-rotator>=1.0.14",
 ]
 
 [tool.setuptools.packages.find]
@@ -39,7 +40,6 @@ dev = [
     "mkdocstrings-python>=1.15.0",
     "nbmake>=1.5.5",
     "pytest-cov>=6.0.0",
-    "requests-ip-rotator>=1.0.14",
 ]
 
 [project.optional-dependencies]
