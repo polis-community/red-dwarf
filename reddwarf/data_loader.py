@@ -11,11 +11,12 @@ from reddwarf.helpers import RedDwarfSession, CloudflareBypassHTTPAdapter
 ua = UserAgent()
 
 class Loader():
-    def __init__(self, filepaths=[], conversation_id=None, report_id=None, is_cache_enabled=True, output_dir=None, data_source="api", directory_url=None):
+    def __init__(self, filepaths=[], conversation_id=None, report_id=None, is_cache_enabled=True, is_ip_rotation_enabled=False, output_dir=None, data_source="api", directory_url=None):
         self.polis_instance_url = "https://pol.is"
         self.conversation_id = conversation_id
         self.report_id = report_id
         self.is_cache_enabled = is_cache_enabled
+        self.is_ip_rotation_enabled = is_ip_rotation_enabled
         self.output_dir = output_dir
         self.data_source = data_source
         self.filepaths = filepaths
@@ -79,9 +80,14 @@ class Loader():
                     'check_same_thread': False,
                 },
             )
-            self.session.use_ip_rotation(self.polis_instance_url)
+
         else:
-            self.session = LimiterSession(per_second=5)
+            self.session = RedDwarfSession(per_second=5)
+            self.session.cache._settings.disabled = True
+
+        if self.is_ip_rotation_enabled:
+            self.session.use_ip_rotation(self.polis_instance_url)
+
         adapter = CloudflareBypassHTTPAdapter()
         self.session.mount(self.polis_instance_url, adapter)
         self.session.headers = {

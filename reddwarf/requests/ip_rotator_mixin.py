@@ -1,6 +1,8 @@
 import logging
 from requests.adapters import HTTPAdapter
 from requests import Session
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from typing import List, Optional
 from requests_ip_rotator import ApiGateway, ip_rotator
 
@@ -20,6 +22,46 @@ class IPRotatorMixin(Session):
         super().__init__(*args, **kwargs)
         self._gateways = {}  # Store gateway objects by domain
         self._rotation_enabled = True  # Global flag to track if rotation is enabled
+
+    def _check_aws_credentials(self, access_key_id: Optional[str] = None,
+                              access_key_secret: Optional[str] = None) -> tuple[bool, str]:
+        """
+        Check if AWS credentials are available either from parameters or environment.
+
+        Args:
+            access_key_id: AWS access key ID
+            access_key_secret: AWS access key secret
+
+        Returns:
+            Tuple[bool, str]: (True if credentials are available, reason if not)
+        """
+        try:
+            # If credentials were provided directly, check those
+            if access_key_id and access_key_secret:
+                # Test creating a simple client with the provided credentials
+                session = boto3.Session(
+                    aws_access_key_id=access_key_id,
+                    aws_secret_access_key=access_key_secret
+                )
+                # Just try to get the available regions to verify credentials
+                session.get_available_regions('apigateway')
+                return True, ""
+
+            # Otherwise check if credentials are available from environment or config
+            session = boto3.Session()
+            # Check if credentials are available in the session
+            credentials = session.get_credentials()
+            if credentials is None:
+                return False, "No AWS credentials found in environment or config files"
+
+            # Verify the credentials work by testing a simple operation
+            session.get_available_regions('apigateway')
+            return True, ""
+
+        except (NoCredentialsError, PartialCredentialsError) as e:
+            return False, f"AWS credentials error: {str(e)}"
+        except Exception as e:
+            return False, f"Error checking AWS credentials: {str(e)}"
 
     def use_ip_rotation(
         self,
@@ -48,6 +90,17 @@ class IPRotatorMixin(Session):
         Returns:
             bool: True if IP rotation was successfully enabled, False otherwise
         """
+        # First check if AWS credentials are available
+        credentials_available, reason = self._check_aws_credentials(access_key_id, access_key_secret)
+
+        if not credentials_available:
+            if fallback_on_error:
+                logger.warning(f"Cannot enable IP rotation: {reason}")
+                logger.warning("Falling back to regular requests without IP rotation")
+                return False
+            else:
+                raise ValueError(f"AWS credentials not available: {reason}")
+
         try:
             # Create the gateway
             gateway = ApiGateway(

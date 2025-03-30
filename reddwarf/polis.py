@@ -205,9 +205,9 @@ class PolisClient():
         self.optimal_silhouette = silhouette_score
         self.optimal_cluster_labels = cluster_labels
 
-    def load_data(self, filepaths=[], conversation_id=None, report_id=None, directory_url=None, data_source="api"):
+    def load_data(self, filepaths=[], conversation_id=None, report_id=None, directory_url=None, data_source="api", is_ip_rotation_enabled=False, is_cache_enabled=True):
         if conversation_id or report_id or filepaths or directory_url:
-            self.data_loader = Loader(conversation_id=conversation_id, report_id=report_id, filepaths=filepaths, directory_url=directory_url, data_source=data_source)
+            self.data_loader = Loader(conversation_id=conversation_id, report_id=report_id, filepaths=filepaths, directory_url=directory_url, data_source=data_source, is_ip_rotation_enabled=is_ip_rotation_enabled, is_cache_enabled=is_cache_enabled)
 
             # Infer moderation type from API conversation_data when available.
             if self.data_loader.conversation_data:
