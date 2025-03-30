@@ -1,5 +1,5 @@
 import logging
-from requests.adapters import HTTPAdapter
+from reddwarf.requests.adapters import CloudflareBypassHTTPAdapter
 from requests import Session
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
@@ -173,7 +173,7 @@ class IPRotatorMixin(Session):
         if not enabled:
             # Temporarily unmount all gateways but don't shut them down
             for site in self._gateways:
-                self.mount(site, HTTPAdapter())
+                self.mount(site, CloudflareBypassHTTPAdapter())
         else:
             # Re-mount all gateways
             for site, gateway in self._gateways.items():
