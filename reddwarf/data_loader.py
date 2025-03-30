@@ -2,20 +2,22 @@ import json
 import os
 from fake_useragent import UserAgent
 from datetime import timedelta
-from requests_ratelimiter import SQLiteBucket, LimiterSession
+from requests_ratelimiter import SQLiteBucket
 import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
-from reddwarf.helpers import CachedLimiterSession, CloudflareBypassHTTPAdapter
+from reddwarf.requests.session import RedDwarfSession
+from reddwarf.requests.adapters import CloudflareBypassHTTPAdapter
 
 ua = UserAgent()
 
 class Loader():
-    def __init__(self, filepaths=[], conversation_id=None, report_id=None, is_cache_enabled=True, output_dir=None, data_source="api", directory_url=None):
+    def __init__(self, filepaths=[], conversation_id=None, report_id=None, is_cache_enabled=True, is_ip_rotation_enabled=False, output_dir=None, data_source="api", directory_url=None):
         self.polis_instance_url = "https://pol.is"
         self.conversation_id = conversation_id
         self.report_id = report_id
         self.is_cache_enabled = is_cache_enabled
+        self.is_ip_rotation_enabled = is_ip_rotation_enabled
         self.output_dir = output_dir
         self.data_source = data_source
         self.filepaths = filepaths
@@ -68,7 +70,7 @@ class Loader():
         # Throttle requests, but disable when response is already cached.
         if self.is_cache_enabled:
             # Source: https://github.com/JWCook/requests-ratelimiter/tree/main?tab=readme-ov-file#custom-session-example-requests-cache
-            self.session = CachedLimiterSession(
+            self.session = RedDwarfSession(
                 per_second=5,
                 expire_after=timedelta(hours=1),
                 cache_name="test_cache.sqlite",
@@ -79,8 +81,14 @@ class Loader():
                     'check_same_thread': False,
                 },
             )
+
         else:
-            self.session = LimiterSession(per_second=5)
+            self.session = RedDwarfSession(per_second=5)
+            self.session.cache._settings.disabled = True
+
+        if self.is_ip_rotation_enabled:
+            self.session.use_ip_rotation(self.polis_instance_url)
+
         adapter = CloudflareBypassHTTPAdapter()
         self.session.mount(self.polis_instance_url, adapter)
         self.session.headers = {
