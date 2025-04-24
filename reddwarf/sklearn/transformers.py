@@ -102,6 +102,8 @@ class SparsityAwareScaler(BaseEstimator, TransformerMixin):
         X_sparse = self._resolve_X_sparse()
         return calculate_scaling_factors(X_sparse=X_sparse)
 
+# TODO: Replace to CaptureMixin and CaptureWrapper.
+# See: https://chatgpt.com/c/680a512a-f604-800b-8922-1992a8ddf491
 class SparsityAwareCapturer(BaseEstimator, TransformerMixin):
     """
     A passthrough transformer that captures and stores the X it receives in

@@ -71,12 +71,13 @@ def run_clustering(
     """
     raw_vote_matrix = generate_raw_matrix(votes=votes)
 
+    # Not used, just for output below, until we can get it into pipeline for inspection.
     filtered_vote_matrix = simple_filter_matrix(
         vote_matrix=raw_vote_matrix,
         mod_out_statement_ids=mod_out_statement_ids,
     )
 
-    projected_participants, projected_statements, pca = run_pca(vote_matrix=filtered_vote_matrix)
+    projected_participants, projected_statements, pca = run_pca(vote_matrix=raw_vote_matrix, mod_out_statement_ids=mod_out_statement_ids)
 
     participant_ids_clusterable = get_clusterable_participant_ids(raw_vote_matrix, vote_threshold=min_user_vote_threshold)
     if keep_participant_ids:

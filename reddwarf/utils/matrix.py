@@ -112,9 +112,9 @@ def get_unvoted_statement_ids(vote_matrix: VoteMatrix) -> List[int]:
     return null_column_ids
 
 def simple_filter_matrix(
-        vote_matrix: VoteMatrix,
+        vote_matrix: VoteMatrix | np.ndarray,
         mod_out_statement_ids: list[int] = [],
-) -> VoteMatrix:
+) -> VoteMatrix | np.ndarray:
     """
     The simple filter on the vote_matrix that is used by Polis prior to running PCA.
 
@@ -125,14 +125,22 @@ def simple_filter_matrix(
     Returns:
         VoteMatrix: Copy of vote_matrix with statements zero'd out
     """
-    vote_matrix = vote_matrix.copy()
-    for tid in mod_out_statement_ids:
-        # Zero out column only if already exists (ie. has votes)
-        if tid in vote_matrix.columns:
-            # TODO: Add a flag to try np.nan instead of zero.
-            vote_matrix.loc[:, tid] = 0
+    if isinstance(vote_matrix, pd.DataFrame):
+        vote_matrix = vote_matrix.copy()
+        for col in mod_out_statement_ids:
+            if col in vote_matrix.columns:
+                vote_matrix[col] = 0
+        return vote_matrix
 
-    return vote_matrix
+    elif isinstance(vote_matrix, np.ndarray):
+        vote_matrix = vote_matrix.copy()
+        for col in mod_out_statement_ids:
+            if isinstance(col, int) and 0 <= col < vote_matrix.shape[1]:
+                vote_matrix[:, col] = 0
+        return vote_matrix
+
+    else:
+        raise TypeError("vote_matrix must be a pandas DataFrame or a NumPy ndarray.")
 
 def get_clusterable_participant_ids(vote_matrix: VoteMatrix, vote_threshold: int) -> list:
     """
