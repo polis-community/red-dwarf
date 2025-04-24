@@ -46,6 +46,7 @@ def run_clustering(
     max_group_count: int = 5,
     force_group_count: Optional[int] = None,
     random_state: Optional[int] = None,
+    previous_result: Optional[PolisClusteringResult] = None,
 ) -> PolisClusteringResult:
     """
     An essentially feature-complete implementation of the Polis clustering algorithm.
@@ -65,10 +66,20 @@ def run_clustering(
         init_centers (list[list[float]]): Initial guesses of [x,y] coordinates for k-means (Length of list must match max_group_count)
         force_group_count (int): Instead of using silhouette scores, force a specific number of groups (k value)
         random_state (int): If set, will force determinism during k-means clustering
+        previous_result (PolisClusteringResult): The result of a previous run of this function, to seed args.
 
     Returns:
         PolisClusteringResult: A dataclass containing clustering results, including intermediate calculations.
     """
+    if previous_result:
+        prev_kmeans = previous_result.kmeans
+        if prev_kmeans:
+            init_centers = prev_kmeans.cluster_centers_
+            # TODO: Implement some variant of k-smoothing to stabilize this instead of locking it.
+            prev_k = len(prev_kmeans.cluster_centers_)
+            force_group_count = prev_k
+        keep_participant_ids = list(previous_result.participants_df.query('to_cluster').index)
+
     raw_vote_matrix = generate_raw_matrix(votes=votes)
 
     filtered_vote_matrix = simple_filter_matrix(

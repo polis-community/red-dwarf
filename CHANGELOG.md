@@ -43,6 +43,7 @@
 - Modify `SparsityAwareScaler` to be able to use captured output from SparsityAware Capture.
 - Remove ported Polis PCA functions that are no longer used.
 - Remove old `impute_missing_votes()` function that's no longer used.
+- Add arg to polis implementation, to seed args with previous result object, locking group number.
 
 ### Chores
 - Moved agora implementation from `reddwarf.agora` to `reddwarf.implementations.agora` (deprecation warning).
