@@ -1,4 +1,9 @@
+from datetime import timedelta
+from enum import Enum
+import os
+from requests_ratelimiter import SQLiteBucket
 from sklearn.impute import SimpleImputer
+from reddwarf.helpers import CachedLimiterSession
 from reddwarf.types.polis import PolisRepness
 from typing import Any, Union, Literal
 import numpy as np
@@ -217,3 +222,33 @@ def simulate_api_response(data):
     to string keys, because all keys are strings in JSON.
     """
     return json.loads(json.dumps(dict(data)))
+
+class ReportType(Enum):
+    SUMMARY = "summary"
+    VOTES = "votes"
+    COMMENTS = "comments"
+    PARTICIPANT_VOTES = "participant-votes"
+    COMMENT_GROUPS = "comment-groups"
+
+def fetch_csv(type: ReportType, output_dir, report_id):
+    print(f"Downloading CSVs from remote server to {output_dir}")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Source: https://github.com/JWCook/requests-ratelimiter/tree/main?tab=readme-ov-file#custom-session-example-requests-cache
+    session = CachedLimiterSession(
+        per_second=5,
+        expire_after=timedelta(hours=1),
+        cache_name="test_cache.sqlite",
+        bucket_class=SQLiteBucket,
+        bucket_kwargs={
+            "path": "test_cache.sqlite",
+            'isolation_level': "EXCLUSIVE",
+            'check_same_thread': False,
+        },
+    )
+
+    with open(f"{output_dir}/{report_id}_{type.value}.csv", 'w') as f:
+        r = session.get(f"https://pol.is/api/v3/reportExport/{report_id}/{type.value}.csv")
+        f.write(r.text)
+    return f
