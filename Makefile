@@ -4,7 +4,7 @@ install: ## Install production dependencies
 	uv pip install --editable .
 
 install-dev: ## Install development dependencies
-	uv sync --extra dev
+	uv sync --extra all --dev
 
 docs-build: ## Build the static docs ./site directory
 	uv run mkdocs build
