@@ -352,8 +352,17 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     fields = agree_fields if use_agree else disagree_fields
     direction = "agree" if use_agree else "disagree"
 
+    sid = statement["statement_id"]
+
+    if isinstance(sid, int):
+        tid = int(sid)
+    elif isinstance(sid, str) and sid.endswith("p"):
+        tid = str(sid)
+    else:
+        tid = int(sid)
+
     result = {
-        "tid": int(statement["statement_id"]),
+        "tid": tid,
         "n-success": int(statement[fields["n-success"]]),
         "n-trials": int(statement["ns"]),
         "p-success": float(statement[fields["p-success"]]),

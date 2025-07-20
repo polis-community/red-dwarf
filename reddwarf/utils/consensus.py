@@ -35,7 +35,7 @@ class ConsensusResult(TypedDict):
 # order to avoid filtering by that measure.
 def select_consensus_statements(
     vote_matrix: VoteMatrix,
-    mod_out_statement_ids: list[int] = [],
+    mod_out_statement_ids: list[int | str] = [],
     pick_max=5,
     prob_threshold: float = 0.5,
     confidence: float = 0.9,
