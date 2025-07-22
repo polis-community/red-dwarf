@@ -1,11 +1,11 @@
 from numpy.typing import NDArray
 import numpy as np
-from .registry import get_reducer
-import reddwarf.utils.reducer.builtins  # noqa: F401
+from reddwarf.utils.reducer import load_builtins
+from reddwarf.utils.reducer.registry import get_reducer
 from reddwarf.utils.matrix import generate_virtual_vote_matrix
 from reddwarf.sklearn.transformers import SparsityAwareCapturer, SparsityAwareScaler
 from reddwarf.sklearn.pipeline import PatchedPipeline
-from typing import Literal, Optional, Tuple, Union, TYPE_CHECKING, TypeAlias
+from typing import Optional, Tuple, Union, TYPE_CHECKING, TypeAlias
 
 from sklearn.impute import SimpleImputer
 
@@ -38,6 +38,7 @@ def run_reducer(
         X_statements (Optional[NDArray]): A numpy array with n-d coordinates for each projected col/statement.
         reducer_model (ReducerModel): The fitted dimensional reduction sci-kit learn estimator.
     """
+    load_builtins()
     reducer_kwargs.update(n_components=n_components)
     match reducer:
         case "pca":

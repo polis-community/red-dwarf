@@ -58,6 +58,20 @@ use in Scikit-Learn workflows, pipelines, and APIs.
     options:
         show_root_heading: true
 
+## `reddwarf.utils.reducer.registry`
+
+### ::: reddwarf.utils.reducer.registry.register_reducer
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.utils.reducer.registry.get_reducer
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.utils.reducer.registry.list_reducers
+    options:
+        show_root_heading: true
+
 ## `reddwarf.utils.clusterer`
 
 ### ::: reddwarf.utils.clusterer.base.run_clusterer
