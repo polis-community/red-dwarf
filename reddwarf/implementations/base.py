@@ -11,7 +11,7 @@ from reddwarf.utils.matrix import (
     simple_filter_matrix,
     get_clusterable_participant_ids,
 )
-from reddwarf.utils.reducer.base import ReducerType, ReducerModel, run_reducer
+from reddwarf.utils.reducer.base import ReducerModel, run_reducer
 from reddwarf.utils.clusterer.base import ClustererType, ClustererModel
 from reddwarf.utils.stats import (
     calculate_comment_statistics_dataframes,
@@ -54,7 +54,7 @@ class PolisClusteringResult:
 
 def run_pipeline(
     votes: list[dict],
-    reducer: ReducerType = "pca",
+    reducer: str = "pca",
     reducer_kwargs: dict = {},
     clusterer: ClustererType = "kmeans",
     clusterer_kwargs: dict = {},
@@ -79,7 +79,7 @@ def run_pipeline(
 
     Args:
         votes (list[dict]): Raw list of vote dicts, with keys for "participant_id", "statement_id", "vote" and "modified"
-        reducer (ReducerType): Selects the type of reducer model to use.
+        reducer (str): Selects the type of reducer model to use.
         reducer_kwargs (dict): Extra params to pass to reducer model during initialization.
         clusterer (ClustererType): Selects the type of clusterer model to use.
         clusterer_kwargs (dict): Extra params to pass to clusterer model during initialization.

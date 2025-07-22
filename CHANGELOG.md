@@ -30,6 +30,7 @@
 - Remove agora implementation and tests. ([#73](https://github.com/polis-community/red-dwarf/issues/74))
 - Migrate from reference HDBSCAN module (in `scikit-learn`) to full-featured HDBSCAN* package.
 - Add dependency groups to avoid installing everything. ([#11](https://github.com/polis-community/red-dwarf/issues/11))
+- Add simple reducer registry for adding more dimensional reduction algos at runtime.
 
 ### Fixes
 
