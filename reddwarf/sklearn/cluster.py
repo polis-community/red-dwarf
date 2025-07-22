@@ -229,6 +229,8 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
         Cluster labels for each sample
     cluster_centers_ : ndarray
         Coordinates of cluster centers
+    init_centers_used_ : ndarray
+        The full array of initial cluster centers actually used to initialize the algorithm
     """
 
     def __init__(
@@ -247,6 +249,7 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
         self.best_score_ = None
         self.labels_ = None
         self.cluster_centers_ = None
+        self.init_centers_used_ = None
 
     def fit(self, X: NDArray) -> 'BestPolisKMeans':
         """Fit the clusterer and find optimal number of clusters using silhouette scores."""
@@ -278,6 +281,8 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
             self.labels_ = self.best_estimator_.labels_
             if hasattr(self.best_estimator_, 'cluster_centers_'):
                 self.cluster_centers_ = self.best_estimator_.cluster_centers_
+            if hasattr(self.best_estimator_, 'init_centers_used_'):
+                self.init_centers_used_ = self.best_estimator_.init_centers_used_
 
         return self
 

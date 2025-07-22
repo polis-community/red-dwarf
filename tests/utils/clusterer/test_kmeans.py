@@ -63,6 +63,11 @@ def test_best_polis_kmeans_real_data(polis_convo_data):
 
     calculated_centers = best_kmeans.cluster_centers_.tolist() if best_kmeans.cluster_centers_ is not None else []
 
+    # Verify init_centers_used_ attribute is properly set
+    assert hasattr(best_kmeans, 'init_centers_used_')
+    assert best_kmeans.init_centers_used_ is not None
+    assert best_kmeans.init_centers_used_.shape[0] == best_kmeans.best_k_
+
     assert len(expected_centers) == len(calculated_centers)
     for i, _ in enumerate(expected_centers):
         assert expected_centers[i] == pytest.approx(calculated_centers[i])
