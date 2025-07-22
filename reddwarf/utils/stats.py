@@ -354,15 +354,15 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
 
     sid = statement["statement_id"]
 
-    if isinstance(sid, int):
-        tid = int(sid)
-    elif isinstance(sid, str) and sid.endswith("p"):
-        tid = str(sid)
-    else:
-        tid = int(sid)
+    # if isinstance(sid, int):
+    #     tid = int(sid)
+    # elif isinstance(sid, str) and sid.endswith("p"):
+    #     tid = str(sid)
+    # else:
+    #     tid = int(sid)
 
     result = {
-        "tid": tid,
+        "tid": int(sid),
         "n-success": int(statement[fields["n-success"]]),
         "n-trials": int(statement["ns"]),
         "p-success": float(statement[fields["p-success"]]),

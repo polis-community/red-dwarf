@@ -252,3 +252,10 @@ def fetch_csv(type: ReportType, output_dir, report_id):
         r = session.get(f"https://pol.is/api/v3/reportExport/{report_id}/{type.value}.csv")
         f.write(r.text)
     return f
+
+def preprocess_votes(votes: list) -> list:
+    """Convert integer statement and participant IDs to string IDs"""
+    for vote in votes:
+        vote["participant_id"] = str(vote["participant_id"])
+        vote["statement_id"] = str(vote["statement_id"])
+    return votes

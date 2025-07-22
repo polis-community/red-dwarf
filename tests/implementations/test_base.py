@@ -3,7 +3,7 @@ import numpy as np
 from reddwarf.implementations.base import run_pipeline
 from reddwarf.data_loader import Loader
 from tests.fixtures import polis_convo_data
-from reddwarf.utils.string_id import preprocess_votes
+from tests.helpers import preprocess_votes
 
 
 ## Determinism via random_seed for run_pipeline()
