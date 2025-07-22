@@ -12,7 +12,7 @@ from reddwarf.utils.matrix import (
     get_clusterable_participant_ids,
 )
 from reddwarf.utils.reducer.base import ReducerModel, run_reducer
-from reddwarf.utils.clusterer.base import ClustererType, ClustererModel
+from reddwarf.utils.clusterer.base import ClustererModel
 from reddwarf.utils.stats import (
     calculate_comment_statistics_dataframes,
     populate_priority_calculations_into_statements_df,
@@ -56,7 +56,7 @@ def run_pipeline(
     votes: list[dict],
     reducer: str = "pca",
     reducer_kwargs: dict = {},
-    clusterer: ClustererType = "kmeans",
+    clusterer: str = "kmeans",
     clusterer_kwargs: dict = {},
     mod_out_statement_ids: list[int] = [],
     meta_statement_ids: list[int] = [],
@@ -81,7 +81,7 @@ def run_pipeline(
         votes (list[dict]): Raw list of vote dicts, with keys for "participant_id", "statement_id", "vote" and "modified"
         reducer (str): Selects the type of reducer model to use.
         reducer_kwargs (dict): Extra params to pass to reducer model during initialization.
-        clusterer (ClustererType): Selects the type of clusterer model to use.
+        clusterer (str): Selects the type of clusterer model to use.
         clusterer_kwargs (dict): Extra params to pass to clusterer model during initialization.
         mod_out_statement_ids (list[int]): List of statement IDs to moderate/zero out
         meta_statement_ids (list[int]): List of meta statement IDs
