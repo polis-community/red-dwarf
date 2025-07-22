@@ -1,6 +1,9 @@
 # Don't lock, because we're a library.
 uv.lock
 
+# Don't force a specific python version.
+.python-version
+
 test_cache.sqlite
 
 # Python notebook testins

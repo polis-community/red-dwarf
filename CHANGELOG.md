@@ -29,6 +29,7 @@
 - Rename `projected_{participants,statements}` to `{participant,statement}_projections` in run_pipeline results. Also coords keyed to ID, instead of dataframes.
 - Remove agora implementation and tests. ([#73](https://github.com/polis-community/red-dwarf/issues/74))
 - Migrate from reference HDBSCAN module (in `scikit-learn`) to full-featured HDBSCAN* package.
+- Add dependency groups to avoid installing everything. ([#11](https://github.com/polis-community/red-dwarf/issues/11))
 
 ### Fixes
 
@@ -38,6 +39,7 @@
 - Only pass unique labels into `generate_figure()` colorbar.
 - bugfix: `clusterer_kwargs` and `reducer_kwargs` were not being pass through `run_pipeline()`.
 - bugfix: Ensure `run_pipeline()` passes `random_state` to reducer.
+- bugfix: Fix overly constrained versions from [#80](https://github.com/polis-community/red-dwarf/issues/80).
 
 ### Chores
 

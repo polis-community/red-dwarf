@@ -3,23 +3,21 @@ name = "red-dwarf"
 version = "0.3.0"
 description = "A DIMensional REDuction library for reproducing and experimenting with Polis-like data pipelines."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
-    "fake-useragent>=1.4.0,<2.0.0",
-    "matplotlib>=3.5.0,<3.8.0",
+    # Core dependencies
     "pandas>=1.5.0",
+    "scikit-learn>=1.1.0",
+
+    # Data loader
+    "pydantic>=1.10.0",
+    "requests>=2.28.0",
     #"requests-cache>=1.2.1",
     # Was getting warnings on stale cache (queued for next release after v1.2.1)
     # See: https://github.com/requests-cache/requests-cache/pull/1068
     "requests-cache",
-    "requests>=2.28.0",
-    "scikit-learn>=1.1.0",
     "requests-ratelimiter>=0.4.0",
-    "concave-hull>=0.0.9",
-    "seaborn>=0.11.0",
-    "pydantic>=1.10.0",
-    "pacmap>=0.7.0",
-    "hdbscan>=0.8.40",
+    "fake-useragent>=1.4.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -34,6 +32,18 @@ license-files = []
 requests-cache = { git = "https://github.com/requests-cache/requests-cache", rev = "12af54ded36" }
 
 [project.optional-dependencies]
+alt-algos = [
+    "pacmap>=0.7.0",
+    "hdbscan>=0.8.40",
+]
+plots = [
+    "concave-hull>=0.0.9",
+    "seaborn>=0.11.0",
+    "matplotlib>=3.5.0",
+]
+all = [
+    "red-dwarf[alt-algos,plots]",
+]
 dev = [
     "coverage>=6.0",
     "ipywidgets>=8.0.0",
@@ -45,6 +55,19 @@ dev = [
 ]
 
 [dependency-groups]
+alt-algos = [
+    "pacmap>=0.7.0",
+    "hdbscan>=0.8.40",
+]
+plots = [
+    "concave-hull>=0.0.9",
+    "seaborn>=0.11.0",
+    "matplotlib>=3.5.0",
+]
+all = [
+    {include-group = "alt-algos"},
+    {include-group = "plots"},
+]
 dev = [
     "coverage>=6.0",
     "ipywidgets>=8.0.0",
@@ -52,5 +75,5 @@ dev = [
     "mkdocstrings-python>=1.8.0",
     "nbmake>=1.5.0",
     "pytest-cov>=4.0.0",
-    "pytest>=7.0.0",
+    "pytest>=6.0.0",
 ]

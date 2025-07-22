@@ -1,45 +1,54 @@
 TEST_FILTER ?= .
+# Make it simpler to change args during `uv run` calls.
+UV_RUN ?= uv run
 
-install: ## Install production dependencies
-	uv pip install --editable .
+venv: ## Make a virtualenv
+	uv venv
 
-install-dev: ## Install development dependencies
-	uv sync --extra dev
+install: ## Install only production dependencies
+	uv pip install --editable .[all]
+
+install-dev: ## Install production with development dependencies
+	uv pip install --editable .[all,dev]
 
 docs-build: ## Build the static docs ./site directory
-	uv run mkdocs build
+	$(UV_RUN) mkdocs build
 
 docs-serve: ## Serve the documentation dev site
-	uv run mkdocs serve
+	$(UV_RUN) mkdocs serve
 
 test: ## Run tests via pytest, optionally filtering (Ex.: `make test TEST_FILTER=map-xids`)
-	uv run pytest -p no:nbmake -k '$(TEST_FILTER)'
+	$(UV_RUN) pytest -p no:nbmake -k '$(TEST_FILTER)'
 
 test-nb: install ## Test all notebooks, optionally specifying file (Ex: `make test-nb NB_FILTER=map-xids`)
-	uv run pytest -p no:cov --nbmake docs/notebooks/*$(NB_FILTER)*.ipynb
+	$(UV_RUN) pytest -p no:cov --nbmake docs/notebooks/*$(NB_FILTER)*.ipynb
 
 test-cov: ## Run tests via pytest (with coverage report)
-	uv run pytest --cov=reddwarf --cov-report term-missing:skip-covered
+	$(UV_RUN) pytest --cov=reddwarf --cov-report term-missing:skip-covered
 
 cov-report-html: ## Build and open html coverage report
-	uv run pytest --cov=reddwarf --cov-report html
+	$(UV_RUN) pytest --cov=reddwarf --cov-report html
 	open htmlcov/index.html
 
 test-debug: ## Run tests via pytest, optionally filtering (with verbose debugging)
 	# Make sure stdout is rendered to screen.
 	# Show full diffs on failure.
-	uv run pytest -p no:nbmake --capture=no -vv -k '$(TEST_FILTER)'
+	$(UV_RUN) pytest -p no:nbmake --capture=no -vv -k '$(TEST_FILTER)'
 
 test-all: test test-nb docs-build ## Run unit and notebook tests
+
+# Small hint to remove gitignore'd python version file, which can confuse usage of uv.
+clean:
+	rm .python-version
 
 clear-test-cache: ## Cleak the SQLite database of cached HTTP requests
 	rm -f test_cache.sqlite
 
 download: install ## Download Polis data into fixtures dir (Ex: `make download CONVO_ID=7vampckwrh DIR=example`)
-	uv run scripts/download_sample_data.py $(CONVO_ID) $(DIR)
+	$(UV_RUN) scripts/download_sample_data.py $(CONVO_ID) $(DIR)
 
 release: ## Print no-op documentation to guide the release process
-	uv run scripts/release.py
+	$(UV_RUN) scripts/release.py
 
 # These make tasks allow the default help text to work properly.
 %:

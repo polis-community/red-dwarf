@@ -53,6 +53,24 @@ Are you or your organization eager to see more platforms and community built aro
 
 ## Usage
 
+```
+# OFFICIAL RELEASES
+
+# For core, the classic polis pipeline: PCA + K-means
+# (~60MB beyond scikit-learn disk space)
+pip install red-dwarf
+
+# For additional algorithms beyond classic polis: PaCMAP, LocalMAP, HDBSCAN, etc.
+pip install red-dwarf[alt-algos]
+
+# For additional packages for visualizing plots
+pip install red-dwarf[plots]
+
+# For everything (~60MB beyond core packages)
+pip install red-dwarf[all]
+# pip install red-dwarf[alt-algos,plots]
+```
+
 See [`docs/notebooks/polis-implementation-demo.ipynb`][notebook] or [`docs/notebooks/`][notebooks] for other examples.
 
 
@@ -82,7 +100,7 @@ This is the generalized pipeline of Polis-like processes that we're aiming to ac
 
 - Install python (preferrably virtual environment)
 - Install uv (python package manager) (e.g. `pip install uv`)
-- Install dependencies with `make install` (or `make install-dev`)
+- Install dependencies with `make install-dev`
 - Run `make` command alone to see other helpful make subcommands
 - Alternatively, run one of the ipynb notebooks; possibly replacing the install command at the top with `%pip install -e ../../` to use the local source instead.
 

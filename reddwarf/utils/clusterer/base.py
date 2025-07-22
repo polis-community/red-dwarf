@@ -1,8 +1,6 @@
 from typing import Literal, Optional, Union, TypeAlias, TYPE_CHECKING
-
 from numpy.typing import NDArray
-
-
+from reddwarf.exceptions import try_import
 from reddwarf.sklearn.cluster import PolisKMeans
 from reddwarf.utils.clusterer.kmeans import find_best_kmeans
 
@@ -43,9 +41,9 @@ def run_clusterer(
             return kmeans
 
         case "hdbscan":
-            from hdbscan import HDBSCAN
+            hdbscan = try_import("hdbscan", extra="alt-algos")
 
-            hdb = HDBSCAN(**clusterer_kwargs)
+            hdb = hdbscan.HDBSCAN(**clusterer_kwargs)
             hdb.fit(X_participants_clusterable)
 
             return hdb

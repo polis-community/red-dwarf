@@ -1,7 +1,7 @@
 from numpy.typing import NDArray
-import pandas as pd
 import numpy as np
-from reddwarf.utils.matrix import VoteMatrix, generate_virtual_vote_matrix
+from reddwarf.exceptions import try_import
+from reddwarf.utils.matrix import generate_virtual_vote_matrix
 from reddwarf.sklearn.transformers import SparsityAwareCapturer, SparsityAwareScaler
 from reddwarf.sklearn.pipeline import PatchedPipeline
 from typing import Literal, Optional, Tuple, Union, TYPE_CHECKING, TypeAlias
@@ -28,12 +28,12 @@ def get_reducer(
     DEFAULT_N_NEIGHBORS = None
     match reducer:
         case "pacmap" | "localmap":
-            from pacmap import PaCMAP, LocalMAP
+            pacmap = try_import("pacmap", extra="alt-algos")
 
             # Override with default if not set
             n_neighbors = reducer_kwargs.pop("n_neighbors", DEFAULT_N_NEIGHBORS)
 
-            ReducerCls = PaCMAP if reducer == "pacmap" else LocalMAP
+            ReducerCls = pacmap.PaCMAP if reducer == "pacmap" else pacmap.LocalMAP
             return ReducerCls(
                 n_components=n_components,
                 random_state=random_state,

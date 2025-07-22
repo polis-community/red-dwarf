@@ -1,14 +1,20 @@
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from collections import defaultdict
-from concave_hull import concave_hull_indexes
 from typing import List, Optional
 from reddwarf.types.polis import PolisRepness
 import numpy as np
-import seaborn as sns
 
 from reddwarf.implementations.base import PolisClusteringResult
 from reddwarf.utils.consensus import ConsensusResult
+
+from reddwarf.exceptions import try_import
+
+# Support optional extras groups by throwing a warning more helpful than default error.
+matplotlib = try_import("matplotlib", extra="plots")
+sns = try_import("seaborn", extra="plots")
+concave_hull = try_import("concave_hull", extra="plots")
+
+plt = matplotlib.pyplot
+patches = matplotlib.patches
 
 GROUP_LABEL_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"]
 
@@ -148,7 +154,7 @@ def generate_figure(
                 print("Cannot create concave hull for less than 3 points. Skipping...")
                 continue
 
-            hull_point_indices = concave_hull_indexes(cluster_points, concavity=4.0)
+            hull_point_indices = concave_hull.concave_hull_indexes(cluster_points, concavity=4.0)
             hull_points = cluster_points[hull_point_indices]
 
             polygon = patches.Polygon(
