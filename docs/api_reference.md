@@ -78,9 +78,10 @@ use in Scikit-Learn workflows, pipelines, and APIs.
     options:
         show_root_heading: true
 
-### ::: reddwarf.utils.clusterer.kmeans.find_best_kmeans
+### ::: reddwarf.sklearn.cluster.BestPolisKMeans
     options:
         show_root_heading: true
+        docstring_style: numpy
 
 ## `reddwarf.utils.consensus`
 
