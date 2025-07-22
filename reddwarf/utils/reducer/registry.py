@@ -62,7 +62,6 @@ def register_reducer(name: str) -> Callable[[Callable[..., Any]], Callable[..., 
     Example:
         >>> @register_reducer('umap')
         ... def make_umap(**kwargs):
-        ...     umap = try_import("umap", extra="alt-algos")
         ...     defaults = dict(n_components=2, n_neighbors=15)
         ...     defaults.update(kwargs)
         ...     return umap.UMAP(**defaults)
