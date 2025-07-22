@@ -1,12 +1,11 @@
 import pytest
-from reddwarf.utils.clusterer.kmeans import run_kmeans
-from reddwarf.sklearn.cluster import BestPolisKMeans
+from reddwarf.sklearn.cluster import BestPolisKMeans, PolisKMeans
 from tests.fixtures import polis_convo_data
 from tests.helpers import transform_base_clusters_to_participant_coords
 import pandas as pd
 
 @pytest.mark.parametrize("polis_convo_data", ["small"], indirect=True)
-def test_run_kmeans_real_data_reproducible(polis_convo_data):
+def test_polis_kmeans_real_data_reproducible(polis_convo_data):
     fixture = polis_convo_data
 
     expected_cluster_centers = [group["center"] for group in fixture.math_data["group-clusters"]]
@@ -22,11 +21,11 @@ def test_run_kmeans_real_data_reproducible(polis_convo_data):
         for item in projected_participants
     ]).set_index("participant_id")
 
-    calculated_kmeans = run_kmeans(
-        dataframe=projected_participants_df,
-        init_centers=expected_cluster_centers,
+    calculated_kmeans = PolisKMeans(
         n_clusters=cluster_count,
-    )
+        init="k-means++",
+        init_centers=expected_cluster_centers,
+    ).fit(projected_participants_df)
 
     # Ensure same number of clusters
     assert len(calculated_kmeans.cluster_centers_) == len(expected_cluster_centers)
