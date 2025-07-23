@@ -26,11 +26,24 @@ use in Scikit-Learn workflows, pipelines, and APIs.
     options:
         show_root_heading: true
 
+### ::: reddwarf.sklearn.cluster.BestPolisKMeans
+    options:
+        show_root_heading: true
+        docstring_style: numpy
+
 ### ::: reddwarf.sklearn.model_selection.GridSearchNonCV
     options:
         show_root_heading: true
 
+### ::: reddwarf.sklearn.pipeline.PatchedPipeline
+    options:
+        show_root_heading: true
+
 ### ::: reddwarf.sklearn.transformers.SparsityAwareScaler
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.sklearn.transformers.SparsityAwareCapturer
     options:
         show_root_heading: true
 
@@ -58,15 +71,30 @@ use in Scikit-Learn workflows, pipelines, and APIs.
     options:
         show_root_heading: true
 
+## `reddwarf.utils.reducer.registry`
+
+### ::: reddwarf.utils.reducer.registry.register_reducer
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.utils.reducer.registry.get_reducer
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.utils.reducer.registry.list_reducers
+    options:
+        show_root_heading: true
+
 ## `reddwarf.utils.clusterer`
 
 ### ::: reddwarf.utils.clusterer.base.run_clusterer
     options:
         show_root_heading: true
 
-### ::: reddwarf.utils.clusterer.kmeans.find_best_kmeans
+### ::: reddwarf.sklearn.cluster.BestPolisKMeans
     options:
         show_root_heading: true
+        docstring_style: numpy
 
 ## `reddwarf.utils.consensus`
 
