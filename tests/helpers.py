@@ -253,9 +253,9 @@ def fetch_csv(type: ReportType, output_dir, report_id):
         f.write(r.text)
     return f
 
-def preprocess_votes(votes: list) -> list:
+def preprocess_data(list: list) -> list:
     """Convert integer statement and participant IDs to string IDs"""
-    for vote in votes:
-        vote["participant_id"] = str(vote["participant_id"])
-        vote["statement_id"] = str(vote["statement_id"])
-    return votes
+    for item in list:
+        item["participant_id"] = str(item["participant_id"])
+        item["statement_id"] = str(item["statement_id"])
+    return list

@@ -113,7 +113,7 @@ def get_unvoted_statement_ids(vote_matrix: VoteMatrix) -> List[int]:
 
 def simple_filter_matrix(
         vote_matrix: VoteMatrix,
-        mod_out_statement_ids: list[int] = [],
+        mod_out_statement_ids: list[int] | list[str] = [],
 ) -> VoteMatrix:
     """
     The simple filter on the vote_matrix that is used by Polis prior to running PCA.
