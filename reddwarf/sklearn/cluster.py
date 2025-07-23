@@ -124,7 +124,7 @@ class PolisKMeans(KMeans):
         return centers
 
     def fit(self, X, y=None, sample_weight=None):
-        X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])  # type: ignore
+        X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32]) # type:ignore
         random_state = check_random_state(self.random_state)
         x_squared_norms = np.sum(X ** 2, axis=1)
 
