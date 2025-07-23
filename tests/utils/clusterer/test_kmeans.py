@@ -54,19 +54,24 @@ def test_best_polis_kmeans_real_data(polis_convo_data):
         for item in projected_participants
     ]).set_index("participant_id")
 
-    best_kmeans = BestPolisKMeans(
+    from reddwarf.utils.clusterer.base import run_clusterer
+
+    # Test using run_clusterer (which is what the pipeline actually uses)
+    clusterer_result = run_clusterer(
+        clusterer="kmeans",
+        X_participants_clusterable=projected_participants_df.values,
         k_bounds=[2, MAX_GROUP_COUNT],
-        # Pad center guesses to have enough values for testing up to max k groups.
         init_centers=expected_centers
     )
-    best_kmeans.fit(projected_participants_df.values)
 
-    calculated_centers = best_kmeans.cluster_centers_.tolist() if best_kmeans.cluster_centers_ is not None else []
+    cluster_centers = getattr(clusterer_result, 'cluster_centers_', None)
+    calculated_centers = cluster_centers.tolist() if cluster_centers is not None else []
 
-    # Verify init_centers_used_ attribute is properly set
-    assert hasattr(best_kmeans, 'init_centers_used_')
-    assert best_kmeans.init_centers_used_ is not None
-    assert best_kmeans.init_centers_used_.shape[0] == best_kmeans.best_k_
+    # Verify init_centers_used_ attribute is available (this was the original bug)
+    assert hasattr(clusterer_result, 'init_centers_used_')
+    init_centers_used = getattr(clusterer_result, 'init_centers_used_', None)
+    assert init_centers_used is not None
+    assert init_centers_used.shape[0] == len(calculated_centers)
 
     assert len(expected_centers) == len(calculated_centers)
     for i, _ in enumerate(expected_centers):

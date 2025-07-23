@@ -54,9 +54,13 @@ def run_clusterer(
     try:
         clusterer_instance = get_clusterer(clusterer, **clusterer_kwargs)
 
-        # Fit the clusterer
-        if hasattr(clusterer_instance, 'fit'):
-            clusterer_instance.fit(X_participants_clusterable)
+        clusterer_instance.fit(X_participants_clusterable)
+
+        # If the clusterer has a best_estimator_ (like BestPolisKMeans), then it's a meta-estimator pipeline.
+        # In this case, return the best estimator instead of the meta-estimator.
+        # This ensures we get the actual fitted estimator with all its attributes/params.
+        if hasattr(clusterer_instance, 'best_estimator_') and clusterer_instance.best_estimator_ is not None:
+            return clusterer_instance.best_estimator_
 
         return clusterer_instance
 

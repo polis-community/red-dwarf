@@ -2,7 +2,7 @@ from typing import List, Optional
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from sklearn.base import BaseEstimator, ClusterMixin, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.cluster import KMeans, kmeans_plusplus
 from sklearn.metrics import silhouette_score
 from sklearn.utils.validation import check_random_state, check_array
@@ -199,7 +199,7 @@ class PolisKMeansDownsampler(BaseEstimator, TransformerMixin):
         return self.kmeans_.cluster_centers_ if self.kmeans_ else None
 
 
-class BestPolisKMeans(BaseEstimator, ClusterMixin):
+class BestPolisKMeans(BaseEstimator):
     """
     A clusterer that automatically finds optimal k-means clustering using silhouette scores.
 
@@ -225,12 +225,6 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
         The optimal number of clusters found
     best_score_ : float
         The best silhouette score achieved
-    labels_ : ndarray
-        Cluster labels for each sample
-    cluster_centers_ : ndarray
-        Coordinates of cluster centers
-    init_centers_used_ : ndarray
-        The full array of initial cluster centers actually used to initialize the algorithm
     """
 
     def __init__(
@@ -247,9 +241,6 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
         self.best_estimator_ = None
         self.best_k_ = None
         self.best_score_ = None
-        self.labels_ = None
-        self.cluster_centers_ = None
-        self.init_centers_used_ = None
 
     def fit(self, X: NDArray) -> 'BestPolisKMeans':
         """Fit the clusterer and find optimal number of clusters using silhouette scores."""
@@ -276,13 +267,6 @@ class BestPolisKMeans(BaseEstimator, ClusterMixin):
         self.best_k_ = search.best_params_['n_clusters']
         self.best_score_ = search.best_score_
         self.best_estimator_ = search.best_estimator_
-
-        if self.best_estimator_:
-            self.labels_ = self.best_estimator_.labels_
-            if hasattr(self.best_estimator_, 'cluster_centers_'):
-                self.cluster_centers_ = self.best_estimator_.cluster_centers_
-            if hasattr(self.best_estimator_, 'init_centers_used_'):
-                self.init_centers_used_ = self.best_estimator_.init_centers_used_
 
         return self
 
