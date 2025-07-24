@@ -352,10 +352,8 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     fields = agree_fields if use_agree else disagree_fields
     direction = "agree" if use_agree else "disagree"
 
-    sid = statement["statement_id"]
-
     result = {
-        "tid": int(sid),
+        "tid": int(statement["statement_id"]),
         "n-success": int(statement[fields["n-success"]]),
         "n-trials": int(statement["ns"]),
         "p-success": float(statement[fields["p-success"]]),
@@ -564,9 +562,8 @@ def select_representative_statements(
     mod_out_mask = grouped_stats_df.index.get_level_values("statement_id").isin(
         mod_out_statement_ids
     )
-    grouped_stats_df = grouped_stats_df[~mod_out_mask]  # type: ignore   
+    grouped_stats_df = grouped_stats_df[~mod_out_mask]  # type: ignore
     for gid, group_df in grouped_stats_df.groupby(level="group_id"):
-
         # Bring statement_id into regular column.
         group_df = group_df.reset_index()
 
@@ -579,7 +576,6 @@ def select_representative_statements(
         sig_filter = lambda row: is_statement_significant(row, confidence)
         sufficient_statements_row_mask = group_df.apply(sig_filter, axis="columns")
         sufficient_statements = group_df[sufficient_statements_row_mask]
-
 
         # Track the best, even if doesn't meet sufficient minimum, to have at least one.
         best_overall = None
@@ -613,7 +609,6 @@ def select_representative_statements(
         else:
             best_head = []
 
-        
         selected = best_head
         selected = selected + [
             row.to_dict()
