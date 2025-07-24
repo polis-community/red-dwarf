@@ -87,6 +87,22 @@ def generate_raw_matrix(
         index="participant_id",
         columns="statement_id",
     )
+    
+    # Ensure consistent column ordering regardless of statement_id type
+    # Sort numerically if all columns can be converted to integers
+    # If not all values can be converted to int, fall back to natural sorting
+    try:
+        sorted_columns = sorted(raw_matrix.columns, key=lambda x: int(x))
+        raw_matrix = raw_matrix.reindex(columns=sorted_columns)
+    except (ValueError, TypeError):
+        raw_matrix = raw_matrix.reindex(columns=sorted(raw_matrix.columns))
+    
+    # Ensure consistent index
+    try:
+        sorted_index = sorted(raw_matrix.index, key=lambda x: int(x))
+        raw_matrix = raw_matrix.reindex(index=sorted_index)
+    except (ValueError, TypeError):
+        raw_matrix = raw_matrix.reindex(index=sorted(raw_matrix.index))
 
     return raw_matrix
 

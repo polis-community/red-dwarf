@@ -16,7 +16,7 @@ def test_run_pipeline_deterministic_with_random_state(reducer, polis_convo_data)
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes =  helpers.preprocess_data(loader.votes_data)
+    votes =  helpers.convert_ids_to_strings(loader.votes_data)
 
 
     random_state = 42
@@ -55,7 +55,7 @@ def test_run_pipeline_not_deterministic_without_random_state(reducer, polis_conv
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes = helpers.preprocess_data(loader.votes_data)
+    votes = helpers.convert_ids_to_strings(loader.votes_data)
 
     # Run pipeline twice without random_state (should be non-deterministic)
     result_1 = run_pipeline(
@@ -94,7 +94,7 @@ def test_run_pipeline_pca_still_deterministic_without_random_state(reducer, poli
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes = helpers.preprocess_data(loader.votes_data)
+    votes = helpers.convert_ids_to_strings(loader.votes_data)
 
     # Run pipeline twice without random_state (PCA should still be deterministic)
     result_1 = run_pipeline(

@@ -253,9 +253,15 @@ def fetch_csv(type: ReportType, output_dir, report_id):
         f.write(r.text)
     return f
 
-def preprocess_data(list: list) -> list:
+def convert_ids_to_strings(data_list: list) -> list:
     """Convert integer statement and participant IDs to string IDs"""
-    for item in list:
-        item["participant_id"] = str(item["participant_id"])
-        item["statement_id"] = str(item["statement_id"])
-    return list
+    for item in data_list:
+        if "participant_id" in item:
+            item["participant_id"] = str(item["participant_id"])
+        if "statement_id" in item:
+            item["statement_id"] = str(item["statement_id"])
+    return data_list
+
+def convert_participant_ids_to_strings(participant_ids: list[int]) -> list[str]:
+    """ Convert a list of participant IDs (int) to a list of string IDs"""
+    return [str(pid) for pid in participant_ids]
