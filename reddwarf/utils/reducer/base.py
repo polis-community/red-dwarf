@@ -7,19 +7,55 @@ from reddwarf.sklearn.transformers import SparsityAwareCapturer, SparsityAwareSc
 from reddwarf.sklearn.pipeline import PatchedPipeline
 from typing import Optional, Tuple, Union, TYPE_CHECKING, TypeAlias
 
-from sklearn.impute import SimpleImputer
-
 if TYPE_CHECKING:
     from pacmap import PaCMAP, LocalMAP
     from sklearn.decomposition import PCA
 
 ReducerModel: TypeAlias = Union["PCA", "PaCMAP", "LocalMAP"]
 
+load_builtins()
+
+# --- Imputer registry ---
+from typing import Callable
+from sklearn.impute import SimpleImputer, KNNImputer
+
+_IMPUTER_REGISTRY: dict[str, Callable[..., object]] = {}
+
+
+def register_imputer(name: str):
+    """Decorator to register an imputer constructor under a name."""
+    def decorator(func: Callable[..., object]):
+        _IMPUTER_REGISTRY[name] = func
+        return func
+    return decorator
+
+
+def get_imputer(name: str, **kwargs):
+    """Retrieve and construct an imputer by name."""
+    if name not in _IMPUTER_REGISTRY:
+        raise ValueError(f"Unknown imputer '{name}'. Available: {list(_IMPUTER_REGISTRY.keys())}")
+    return _IMPUTER_REGISTRY[name](**kwargs)
+
+
+# --- Built-in imputers ---
+@register_imputer("mean")
+def make_mean_imputer(**kwargs):
+    defaults: dict = dict(missing_values=np.nan, strategy="mean")
+    defaults.update(kwargs)
+    return SimpleImputer(**defaults)
+
+@register_imputer("knn")
+def make_knn_imputer(**kwargs):
+    defaults: dict = dict(missing_values=np.nan, n_neighbors=5, weights="distance")
+    defaults.update(kwargs)
+    return KNNImputer(**defaults)
 
 def run_reducer(
     vote_matrix: NDArray,
-    reducer: str = "pca",
+    imputer: str | None = None,
+    imputer_kwargs: dict = {},
     n_components: int = 2,
+    reducer: str = "pca",
     **reducer_kwargs,
 ) -> Tuple[NDArray, Optional[NDArray], ReducerModel]:
     """
@@ -38,14 +74,15 @@ def run_reducer(
         X_statements (Optional[NDArray]): A numpy array with n-d coordinates for each projected col/statement.
         reducer_model (ReducerModel): The fitted dimensional reduction sci-kit learn estimator.
     """
-    load_builtins()
+    imputer = imputer or ("mean" if reducer == "pca" else "knn")
+
     reducer_kwargs.update(n_components=n_components)
     match reducer:
         case "pca":
             pipeline = PatchedPipeline(
                 [
                     ("capture", SparsityAwareCapturer()),
-                    ("impute", SimpleImputer(missing_values=np.nan, strategy="mean")),
+                    ("impute", get_imputer(imputer, **imputer_kwargs)),
                     ("reduce", get_reducer(reducer, **reducer_kwargs)),
                     ("scale", SparsityAwareScaler(capture_step="capture")),
                 ]
@@ -54,7 +91,7 @@ def run_reducer(
         case "pacmap" | "localmap" | _:
             pipeline = PatchedPipeline(
                 [
-                    ("impute", SimpleImputer(missing_values=np.nan, strategy="mean")),
+                    ("impute", get_imputer(imputer, **imputer_kwargs)),
                     ("reduce", get_reducer(reducer, **reducer_kwargs)),
                 ]
             )

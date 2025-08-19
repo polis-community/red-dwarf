@@ -58,6 +58,8 @@ def run_pipeline(
     reducer_kwargs: dict = {},
     clusterer: str = "kmeans",
     clusterer_kwargs: dict = {},
+    imputer: str | None = None,
+    imputer_kwargs: dict = {},
     mod_out_statement_ids: list[int] = [],
     meta_statement_ids: list[int] = [],
     min_user_vote_threshold: int = 7,
@@ -108,8 +110,10 @@ def run_pipeline(
     # Run reducer and generate participant projections (and statement projections if possible).
     X_participants, X_statements, reducer_model = run_reducer(
         vote_matrix=filtered_vote_matrix.values,
-        reducer=reducer,
         random_state=random_state,
+        imputer=imputer,
+        imputer_kwargs=imputer_kwargs,
+        reducer=reducer,
         **reducer_kwargs,
     )
     participants_df = pd.DataFrame(X_participants, columns=pd.Index(["x", "y"]), index=filtered_vote_matrix.index)
