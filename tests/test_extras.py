@@ -25,7 +25,7 @@ def test_missing_extras_pca_works(monkeypatch):
         mp.setattr(builtins, "__import__", _fake_import)
         from reddwarf.utils.reducer.base import get_reducer
 
-        get_reducer(reducer="pca")
+        get_reducer(name="pca")
 
 def test_missing_extras_kmeans_works(monkeypatch):
     # Ensure clean re-import
@@ -67,7 +67,7 @@ def test_missing_extras_pacmap_fails(monkeypatch):
         from reddwarf.utils.reducer.base import get_reducer
 
         with pytest.raises(ImportError) as exc_info:
-            get_reducer(reducer="pacmap")
+            get_reducer(name="pacmap")
 
         assert "Missing optional dependency 'pacmap'" in str(exc_info.value)
         assert "pip install red-dwarf[alt-algos]" in str(exc_info.value)
@@ -79,7 +79,7 @@ def test_missing_extras_localmap_fails(monkeypatch):
         from reddwarf.utils.reducer.base import get_reducer
 
         with pytest.raises(ImportError) as exc_info:
-            get_reducer(reducer="localmap")
+            get_reducer(name="localmap")
 
         assert "Missing optional dependency 'pacmap'" in str(exc_info.value)
         assert "pip install red-dwarf[alt-algos]" in str(exc_info.value)

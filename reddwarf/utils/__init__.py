@@ -1,4 +1,3 @@
-from reddwarf.utils.clusterer.kmeans import *
 from reddwarf.utils.matrix import *
 from reddwarf.utils.polismath import *
 from reddwarf.utils.stats import *
