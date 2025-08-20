@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Literal
 from types import SimpleNamespace
 from scipy.stats import norm
 from reddwarf.utils.matrix import VoteMatrix
@@ -82,6 +82,15 @@ def is_statement_significant(row: pd.Series, confidence=0.90) -> bool:
     )
 
     return is_agreement_significant or is_disagreement_significant
+
+
+def get_statement_significant_for(
+    pat: float, rat: float, pdt: float, rdt: float
+) -> Literal["agree", "disagree"]:
+    "Get if statement is significant for agree or disagree"
+    is_repful_for_agree = pat + rat >= pdt + rdt
+    is_repful = "agree" if is_repful_for_agree else "disagree"
+    return is_repful
 
 
 def beats_best_by_repness_test(
@@ -310,7 +319,9 @@ def calculate_comment_statistics(
     )
 
 
-def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
+def format_comment_stats(
+    statement: pd.Series, confidence: float
+) -> PolisRepnessStatement:
     """
     Format internal statistics into concise agree/disagree format.
     Uses either consensus style or group-repness style depending on available fields.
@@ -342,15 +353,19 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
 
     # Select score source
     if format_style == "group-repness":
-        score_agree = float(statement["rat"])
-        score_disagree = float(statement["rdt"])
+        repful_for = get_statement_significant_for(
+            pat=statement["pat"],
+            rat=statement["rat"],
+            pdt=statement["pdt"],
+            rdt=statement["rdt"],
+        )
     else:
         score_agree = float(statement["pat"])
         score_disagree = float(statement["pdt"])
+        use_agree = score_agree >= score_disagree
+        repful_for = "agree" if use_agree else "disagree"
 
-    use_agree = score_agree > score_disagree
-    fields = agree_fields if use_agree else disagree_fields
-    direction = "agree" if use_agree else "disagree"
+    fields = agree_fields if repful_for == "agree" else disagree_fields
 
     result = {
         "tid": int(statement["statement_id"]),
@@ -363,9 +378,9 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     if format_style == "group-repness":
         result["repness"] = float(statement[fields["repness"]])
         result["repness-test"] = float(statement[fields["repness-test"]])
-        result["repful-for"] = direction
+        result["repful-for"] = repful_for
     else:
-        result["cons-for"] = direction
+        result["cons-for"] = repful_for
 
     return result
 
@@ -446,7 +461,7 @@ def calculate_comment_statistics_dataframes(
         {
             "group-aware-consensus": C_v_c[votes.A, :],
             "group-aware-consensus-agree": C_v_c[votes.A, :],
-            "group-aware-consensus-disagree": C_v_c[votes.D, :]
+            "group-aware-consensus-disagree": C_v_c[votes.D, :],
         },
         index=vote_matrix.columns,
     )
