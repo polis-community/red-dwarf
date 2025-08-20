@@ -102,6 +102,8 @@ def select_consensus_statements(
     df["consensus_agree_rank"] = agree_candidates["consensus_agree_rank"]
     df["consensus_disagree_rank"] = disagree_candidates["consensus_disagree_rank"]
 
+    format_comments = lambda row: format_comment_stats(row, confidence)
+
     # Select top N agree/disagree statements
     if agree_candidates.empty:
         top_agree = []
@@ -112,7 +114,7 @@ def select_consensus_statements(
             for st in agree_candidates.sort_values("consensus_agree_rank")
             .head(pick_max)
             .reset_index()
-            .apply(format_comment_stats, axis=1)
+            .apply(format_comments, axis=1)
         ]
 
     if disagree_candidates.empty:
@@ -124,7 +126,7 @@ def select_consensus_statements(
             for st in disagree_candidates.sort_values("consensus_disagree_rank")
             .head(pick_max)
             .reset_index()
-            .apply(format_comment_stats, axis=1)
+            .apply(format_comments, axis=1)
         ]
 
     return {
