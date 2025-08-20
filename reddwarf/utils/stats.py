@@ -105,7 +105,7 @@ def get_statement_repful_for(
     format_style = "group-repness" if has_repness else "consensus"
 
     if format_style == "consensus":
-        pat, pdt = [row[col] for col in ["rat", "rdt"]]
+        pat, pdt = [row[col] for col in ["pat", "pdt"]]
         is_repful_for_agree = pat > pdt
         repful_for = "agree" if is_repful_for_agree else "disagree"
         return repful_for
@@ -116,7 +116,10 @@ def get_statement_repful_for(
     if is_statement_disagree_significant(row, confidence):
         return "disagree"
     # This should not happen if it is called when the statement has already been identified as significant...
-    rat, rdt = [row[col] for col in ["rat", "rdt"]]
+    rat, rdt, statement_id = [row[col] for col in ["rat", "rdt", "statement_id"]]
+    print(
+        f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
+    )
     is_repful_for_agree = rat > rdt
     repful_for = "agree" if is_repful_for_agree else "disagree"
     return repful_for
