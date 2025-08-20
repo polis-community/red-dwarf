@@ -320,9 +320,7 @@ def calculate_comment_statistics(
     )
 
 
-def format_comment_stats(
-    statement: pd.Series, confidence: float
-) -> PolisRepnessStatement:
+def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     """
     Format internal statistics into concise agree/disagree format.
     Uses either consensus style or group-repness style depending on available fields.
