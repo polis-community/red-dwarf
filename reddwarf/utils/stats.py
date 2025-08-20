@@ -638,12 +638,11 @@ def select_representative_statements(
 
         selected = best_head
         selected = selected + [
-            row.to_dict()
-            for _, row in sufficient_statements.iterrows()
-            if best_head
-            # Skip any statements already in best_head
-            and best_head[0]["tid"] != row["tid"]
+            row.to_dict() for _, row in sufficient_statements.iterrows()
         ]
+        # Sort to put the most representatives first
+        selected = sorted(selected, key=lambda row: row["repness_test"], reverse=True)
+        # Only then, pick up to pick_max statements
         selected = selected[:pick_max]
         # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
         selected = sorted(selected, key=lambda row: row["repful-for"])
