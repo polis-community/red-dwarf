@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Literal
 from types import SimpleNamespace
 from scipy.stats import norm
 from reddwarf.utils.matrix import VoteMatrix
@@ -68,20 +68,61 @@ def two_prop_test(
 def is_significant(z_val: float, confidence: float = 0.90) -> bool:
     """Test whether z-statistic is significant at 90% confidence (one-tailed, right-side)."""
     critical_value = norm.ppf(confidence)  # 90% confidence level, one-tailed
-    return z_val > critical_value
+    return z_val > critical_value  # rat/rdt can be negative
+
+
+def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
+    "Decide whether we should count a statement in a group as being representative."
+    pat, rat = [row[col] for col in ["pat", "rat"]]
+    is_agreement_significant = is_significant(pat, confidence) and is_significant(
+        rat, confidence
+    )
+    return is_agreement_significant
+
+
+def is_statement_disagree_significant(row: pd.Series, confidence=0.90) -> bool:
+    "Decide whether we should count a statement in a group as being representative."
+    pdt, rdt = [row[col] for col in ["pdt", "rdt"]]
+    is_disagreement_significant = is_significant(pdt, confidence) and is_significant(
+        rdt, confidence
+    )
+    return is_disagreement_significant
 
 
 def is_statement_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pat, rat, pdt, rdt = [row[col] for col in ["pat", "rat", "pdt", "rdt"]]
-    is_agreement_significant = is_significant(pat, confidence) and is_significant(
-        rat, confidence
-    )
-    is_disagreement_significant = is_significant(pdt, confidence) and is_significant(
-        rdt, confidence
-    )
+    is_agreement_significant = is_statement_agree_significant(row, confidence)
+    is_disagreement_significant = is_statement_disagree_significant(row, confidence)
 
     return is_agreement_significant or is_disagreement_significant
+
+
+def get_statement_repful_for(
+    row: pd.Series, confidence=0.90
+) -> Literal["agree", "disagree"]:
+    "Get if statement is significant for agree or disagree."
+    has_repness = "rat" in row and "rdt" in row
+    format_style = "group-repness" if has_repness else "consensus"
+
+    if format_style == "consensus":
+        pat, pdt = [row[col] for col in ["pat", "pdt"]]
+        is_repful_for_agree = pat > pdt
+        repful_for = "agree" if is_repful_for_agree else "disagree"
+        return repful_for
+
+    # now rat and rdt exist
+    if is_statement_agree_significant(row, confidence):
+        return "agree"
+    if is_statement_disagree_significant(row, confidence):
+        return "disagree"
+    # This should not happen if it is called when the statement has already been identified as significant...
+    rat, rdt, statement_id = [row[col] for col in ["rat", "rdt", "statement_id"]]
+    print(
+        f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
+    )
+    is_repful_for_agree = rat > rdt
+    repful_for = "agree" if is_repful_for_agree else "disagree"
+    return repful_for
 
 
 def beats_best_by_repness_test(
@@ -310,7 +351,10 @@ def calculate_comment_statistics(
     )
 
 
-def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
+def format_comment_stats(
+    statement: pd.Series,
+    confidence: float = 0.90,
+) -> PolisRepnessStatement:
     """
     Format internal statistics into concise agree/disagree format.
     Uses either consensus style or group-repness style depending on available fields.
@@ -341,16 +385,9 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     }
 
     # Select score source
-    if format_style == "group-repness":
-        score_agree = float(statement["rat"])
-        score_disagree = float(statement["rdt"])
-    else:
-        score_agree = float(statement["pat"])
-        score_disagree = float(statement["pdt"])
+    repful_for = get_statement_repful_for(statement, confidence)
 
-    use_agree = score_agree > score_disagree
-    fields = agree_fields if use_agree else disagree_fields
-    direction = "agree" if use_agree else "disagree"
+    fields = agree_fields if repful_for == "agree" else disagree_fields
 
     result = {
         "tid": int(statement["statement_id"]),
@@ -363,9 +400,9 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     if format_style == "group-repness":
         result["repness"] = float(statement[fields["repness"]])
         result["repness-test"] = float(statement[fields["repness-test"]])
-        result["repful-for"] = direction
+        result["repful-for"] = repful_for
     else:
-        result["cons-for"] = direction
+        result["cons-for"] = repful_for
 
     return result
 
@@ -446,7 +483,7 @@ def calculate_comment_statistics_dataframes(
         {
             "group-aware-consensus": C_v_c[votes.A, :],
             "group-aware-consensus-agree": C_v_c[votes.A, :],
-            "group-aware-consensus-disagree": C_v_c[votes.D, :]
+            "group-aware-consensus-disagree": C_v_c[votes.D, :],
         },
         index=vote_matrix.columns,
     )
@@ -567,12 +604,6 @@ def select_representative_statements(
         # Bring statement_id into regular column.
         group_df = group_df.reset_index()
 
-        best_agree = None
-        # Track the best-agree, to bring to top if exists.
-        for _, row in group_df.iterrows():
-            if beats_best_of_agrees(row, best_agree, confidence):
-                best_agree = row
-
         sig_filter = lambda row: is_statement_significant(row, confidence)
         sufficient_statements_row_mask = group_df.apply(sig_filter, axis="columns")
         sufficient_statements = group_df[sufficient_statements_row_mask]
@@ -589,7 +620,7 @@ def select_representative_statements(
             sufficient_statements = (
                 pd.DataFrame(
                     [
-                        format_comment_stats(row)
+                        format_comment_stats(row, confidence)
                         for _, row in sufficient_statements.iterrows()
                     ]
                 )
@@ -599,24 +630,19 @@ def select_representative_statements(
                 .drop(columns="repness_metric")
             )
 
-        if best_agree is not None:
-            best_agree = format_comment_stats(best_agree)
-            best_agree.update({"n-agree": best_agree["n-success"], "best-agree": True})
-            best_head = [best_agree]
-        elif best_overall is not None:
-            best_overall = format_comment_stats(best_overall)
+        if best_overall is not None:
+            best_overall = format_comment_stats(best_overall, confidence)
             best_head = [best_overall]
         else:
             best_head = []
 
         selected = best_head
         selected = selected + [
-            row.to_dict()
-            for _, row in sufficient_statements.iterrows()
-            if best_head
-            # Skip any statements already in best_head
-            and best_head[0]["tid"] != row["tid"]
+            row.to_dict() for _, row in sufficient_statements.iterrows()
         ]
+        # Sort to put the most representatives first
+        selected = sorted(selected, key=lambda row: row["repness-test"], reverse=True)
+        # Only then, pick up to pick_max statements
         selected = selected[:pick_max]
         # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
         selected = sorted(selected, key=lambda row: row["repful-for"])
