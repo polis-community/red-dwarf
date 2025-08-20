@@ -73,24 +73,30 @@ def is_significant(z_val: float, confidence: float = 0.90) -> bool:
 
 def is_statement_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pat, rat, pdt, rdt = [row[col] for col in ["pat", "rat", "pdt", "rdt"]]
+    pat, rat, pdt, rdt, tid = [
+        row[col] for col in ["pat", "rat", "pdt", "rdt", "statement_id"]
+    ]
     is_agreement_significant = is_significant(pat, confidence) and is_significant(
         rat, confidence
     )
     is_disagreement_significant = is_significant(pdt, confidence) and is_significant(
         rdt, confidence
     )
+    if tid == 2460:
+        print(
+            f"pat={pat}, rat={rat}, pdt={pdt}, rdt={rdt}, confidence={confidence}, calc_confidence={norm.ppf(confidence)}, is_agreement_significant={is_agreement_significant}, is_disagreement_significant={is_disagreement_significant}"
+        )
 
     return is_agreement_significant or is_disagreement_significant
 
 
 def get_statement_significant_for(
-    pat: float, rat: float, pdt: float, rdt: float
+    pat: float, pdt: float
 ) -> Literal["agree", "disagree"]:
     "Get if statement is significant for agree or disagree"
-    # is_repful_for_agree = pat > pdt
+    is_repful_for_agree = pat > pdt
     # # rat/rdt can be negative, probably not the case for pat/pdt
-    # is_repful = "agree" if is_repful_for_agree else "disagree"
+    is_repful = "agree" if is_repful_for_agree else "disagree"
     return "agree"  # testing
 
 
@@ -351,18 +357,9 @@ def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     }
 
     # Select score source
-    if format_style == "group-repness":
-        repful_for = get_statement_significant_for(
-            pat=statement["pat"],
-            rat=statement["rat"],
-            pdt=statement["pdt"],
-            rdt=statement["rdt"],
-        )
-    else:
-        score_agree = float(statement["pat"])
-        score_disagree = float(statement["pdt"])
-        use_agree = score_agree > score_disagree
-        repful_for = "agree" if use_agree else "disagree"
+    repful_for = get_statement_significant_for(
+        pat=statement["pat"], pdt=statement["pdt"]
+    )
 
     fields = agree_fields if repful_for == "agree" else disagree_fields
 
