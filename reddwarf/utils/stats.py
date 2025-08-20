@@ -88,10 +88,10 @@ def get_statement_significant_for(
     pat: float, rat: float, pdt: float, rdt: float
 ) -> Literal["agree", "disagree"]:
     "Get if statement is significant for agree or disagree"
-    is_repful_for_agree = pat > pdt
-    # rat/rdt can be negative, probably not the case for pat/pdt
-    is_repful = "agree" if is_repful_for_agree else "disagree"
-    return is_repful
+    # is_repful_for_agree = pat > pdt
+    # # rat/rdt can be negative, probably not the case for pat/pdt
+    # is_repful = "agree" if is_repful_for_agree else "disagree"
+    return "agree"  # testing
 
 
 def beats_best_by_repness_test(
