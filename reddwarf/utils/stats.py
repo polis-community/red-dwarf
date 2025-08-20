@@ -68,7 +68,7 @@ def two_prop_test(
 def is_significant(z_val: float, confidence: float = 0.90) -> bool:
     """Test whether z-statistic is significant at 90% confidence (one-tailed, right-side)."""
     critical_value = norm.ppf(confidence)  # 90% confidence level, one-tailed
-    return abs(z_val) > critical_value  # rat/rdt can be negative
+    return z_val > critical_value  # rat/rdt can be negative
 
 
 def is_statement_significant(row: pd.Series, confidence=0.90) -> bool:
@@ -88,9 +88,8 @@ def get_statement_significant_for(
     pat: float, rat: float, pdt: float, rdt: float
 ) -> Literal["agree", "disagree"]:
     "Get if statement is significant for agree or disagree"
-    is_repful_for_agree = abs(pat) >= abs(
-        pdt
-    )  # rat/rdt can be negative, probably not the case for pat/pdt
+    is_repful_for_agree = pat > pdt
+    # rat/rdt can be negative, probably not the case for pat/pdt
     is_repful = "agree" if is_repful_for_agree else "disagree"
     return is_repful
 
@@ -364,7 +363,7 @@ def format_comment_stats(
     else:
         score_agree = float(statement["pat"])
         score_disagree = float(statement["pdt"])
-        use_agree = score_agree >= score_disagree
+        use_agree = score_agree > score_disagree
         repful_for = "agree" if use_agree else "disagree"
 
     fields = agree_fields if repful_for == "agree" else disagree_fields
