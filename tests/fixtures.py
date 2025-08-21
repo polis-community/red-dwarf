@@ -101,7 +101,7 @@ def polis_convo_data(request):
                 math_data=loader.math_data,
                 data_dir=tmpdirname,
                 filename=filename,
-                keep_participant_ids=keep_participant_ids,
+                keep_participant_ids=loader.math_data["in-conv"],
             )
             # Tmpdir cleanup will happen after yield completes
             return
