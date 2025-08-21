@@ -76,8 +76,11 @@ def generate_cluster_labels(
         for participant_id in cluster["members"]:
             participant_cluster_pairs.append((participant_id, cluster_id))
 
-    # Sort the list by participant_id
-    sorted_pairs = sorted(participant_cluster_pairs, key=lambda x: x[0])
+    # Sort the list by participant_id numerically if possible
+    try:
+        sorted_pairs = sorted(participant_cluster_pairs, key=lambda x: int(x[0]))
+    except (ValueError, TypeError):
+        sorted_pairs = sorted(participant_cluster_pairs, key=lambda x: x[0])
 
     # Extract just the cluster IDs in order
     cluster_ids_in_order = [pair[1] for pair in sorted_pairs]
