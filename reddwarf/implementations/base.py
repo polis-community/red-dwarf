@@ -118,10 +118,11 @@ def run_pipeline(
         raw_vote_matrix, vote_threshold=min_user_vote_threshold
     )
     if keep_participant_ids:
-        # TODO: Make this an intersection, in case there are members of
-        # keep_participant_ids list that aren't represented in vote_matrix.
+        # Ensure we're not trying to keep any participant IDs that don't exist in matrix.
+        # TODO: Does this break any assumptions?
+        keep_participant_ids_existing = participants_df.index.intersection(keep_participant_ids).to_list()
         participant_ids_to_cluster = sorted(
-            list(set(participant_ids_to_cluster + keep_participant_ids))
+            list(set(participant_ids_to_cluster + keep_participant_ids_existing))
         )
 
     clusterer_model = run_clusterer(

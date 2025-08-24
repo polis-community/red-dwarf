@@ -40,6 +40,7 @@
 - bugfix: `clusterer_kwargs` and `reducer_kwargs` were not being pass through `run_pipeline()`.
 - bugfix: Ensure `run_pipeline()` passes `random_state` to reducer.
 - bugfix: Fix overly constrained versions from [#80](https://github.com/polis-community/red-dwarf/issues/80).
+- bugfix: Ensure we don't crash when a participant ID in `keep_participant_ids` doesn't exist in vote matrix.
 
 ### Chores
 
