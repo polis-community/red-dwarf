@@ -95,14 +95,14 @@ def generate_raw_matrix(
         sorted_columns = sorted(raw_matrix.columns, key=lambda x: int(x))
     except (ValueError, TypeError):
         sorted_columns = sorted(raw_matrix.columns)
-        raw_matrix = raw_matrix.reindex(columns=sorted_columns)
+    raw_matrix = raw_matrix.reindex(columns=sorted_columns)
     
     # Ensure consistent index
     try:
         sorted_index = sorted(raw_matrix.index, key=lambda x: int(x))
     except (ValueError, TypeError):
         sorted_index = sorted(raw_matrix.index)
-        raw_matrix = raw_matrix.reindex(index=sorted_index)
+    raw_matrix = raw_matrix.reindex(index=sorted_index)
 
     return raw_matrix
 
