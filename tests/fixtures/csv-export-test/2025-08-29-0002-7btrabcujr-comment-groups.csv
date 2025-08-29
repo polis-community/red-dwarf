@@ -1,0 +1,83 @@
+comment-id,comment,total-votes,total-agrees,total-disagrees,total-passes,group-a-votes,group-a-agrees,group-a-disagrees,group-a-passes,group-b-votes,group-b-agrees,group-b-disagrees,group-b-passes
+0,"Major streets should accommodate both cars and bikes to improve mobility for everyone.",33,25,6,2,6,1,5,0,27,24,1,2
+1,"Bike lanes on busy roads promote eco-friendly transportation but require careful planning.",31,26,3,2,5,2,3,0,26,24,0,2
+2,"Reducing car lanes for bike lanes can make roads safer for cyclists and drivers alike.",31,23,5,3,5,1,4,0,26,22,1,3
+3,"The province paying to remove bike lanes may discourage local efforts for safer cycling.",29,27,2,0,5,3,2,0,24,24,0,0
+4,"Consulting the province before adding bike lanes could slow down important city-level changes.",32,26,3,3,5,1,3,1,27,25,0,2
+5,"Cities should have full authority to decide on bike lanes based on local needs.",32,26,3,3,5,1,3,1,27,25,0,2
+6,"Removing bike lanes risks pushing cyclists into more dangerous traffic situations.",30,26,4,0,6,3,3,0,24,23,1,0
+7,"City planning should prioritize reducing emissions by supporting safe bike infrastructure.",32,25,5,2,6,1,4,1,26,24,1,1
+8,"It’s critical that cities and the province work together to create safe transportation options.",31,21,4,6,5,4,1,0,26,17,3,6
+9,"Efficient traffic flow for cars is important, but not at the cost of bike lane safety.",31,24,5,2,6,2,4,0,25,22,1,2
+10,"Provincial oversight may help ensure consistent standards for bike lanes on major roads.",29,7,16,6,5,3,1,1,24,4,15,5
+11,"We need more studies on how bike lanes on major roads affect traffic, safety, and businesses.",32,10,16,6,6,3,3,0,26,7,13,6
+12,"Preserving car lanes on major streets can help reduce traffic congestion and travel times.",30,8,17,5,6,6,0,0,24,2,17,5
+13,"Car lanes are essential for emergency services and public transit to move efficiently in busy areas.",29,13,14,2,6,5,1,0,23,8,13,2
+14,"Removing bike lanes may make driving through high-traffic areas smoother and safer for everyone.",29,8,20,1,5,5,0,0,24,3,20,1
+15,"Car lanes on major streets support local businesses by making it easier for customers to reach them.",33,15,17,1,6,4,2,0,27,11,15,1
+16,"Maintaining more car lanes could reduce the likelihood of accidents between cars and bikes.",34,5,25,4,6,5,0,1,28,0,25,3
+17,"Car traffic on major roads should be prioritized for commuters and public transit flow.",30,8,13,9,5,3,2,0,25,5,11,9
+18,"Major streets are critical for car travel, and bike lanes are better suited to quieter side streets.",32,7,23,2,5,4,1,0,27,3,22,2
+19,"Removing bike lanes from busy streets could help relieve bottlenecks and reduce idling emissions.",31,8,21,2,6,6,0,0,25,2,21,2
+20,"Roadways with more car lanes support the large number of drivers who rely on their vehicles daily.",30,9,20,1,6,6,0,0,24,3,20,1
+21,"Reducing bike lanes on busy roads can improve traffic flow and reduce driver frustration.",30,8,21,1,6,5,1,0,24,3,20,1
+22,"Car lanes are essential for suburban commuters who depend on driving into the city for work.",32,10,19,3,6,3,2,1,26,7,17,2
+23,"Keeping major roads clear of bike lanes may allow for smoother public transit routes and bus flow.",32,9,20,3,6,6,0,0,26,3,20,3
+24,"Expanding bike infrastructure removes cars from the road making our cities quieter.",32,26,6,0,6,1,5,0,26,25,1,0
+25,"Where possible, the city should design bike lanes so that emergency vehicles can also use them.",31,20,6,5,6,2,4,0,25,18,2,5
+26,"Removing paid parking spaces on roads would have a greater impact improving traffic congestion than removing bike lanes.",28,20,2,6,6,4,1,1,22,16,1,5
+27,"Existing bike lanes should remain in place.",30,22,6,2,6,1,5,0,24,21,1,2
+28,"Making road congestion in the hope that people choose other forms of transportation is the wrong approach to take",28,13,6,9,6,5,0,1,22,8,6,8
+29,"prioritize getting people out of the single person auto and into mass transit, and human powered vehicles, cars are the cause of traffic",2,2,0,0,0,0,0,0,2,2,0,0
+30,"prioritize getting people out of the single person auto and into other forms of transit",28,25,3,0,5,2,3,0,23,23,0,0
+31,"cars are the cause of traffic",27,24,3,0,5,2,3,0,22,22,0,0
+32,"Cars shouldn't be the only transportation method",26,23,2,1,6,3,2,1,20,20,0,0
+33,"Bicycles and other mode of transportation have just as much authority on roads as cars, policies should be update to accomodate them",2,2,0,0,0,0,0,0,2,2,0,0
+34,"Bicycles and other mode of transportation have just as much authority on roads as cars",23,18,4,1,5,1,4,0,18,17,0,1
+35,"Policies should be update to accommodate Bicycles and other mode of transportation",23,17,2,4,5,2,2,1,18,15,0,3
+36,"Cars are space inefficient compared to cycling or mass public transit.",24,19,5,0,5,1,4,0,19,18,1,0
+37,"Instead of continuing to comission studies, Toronto should expedite actions and learn from the successes & failures of other municipalities.",25,22,1,2,5,5,0,0,20,17,1,2
+38,"Bike lanes can reduce traffic by getting people onto bikes who would otherwise drive.",20,15,2,3,5,2,2,1,15,13,0,2
+39,"Removing bike lanes does not remove cyclists from the road. It just makes it less safe to bike.",21,18,1,2,4,2,1,1,17,16,0,1
+40,"I'm open to consideration of losing some designated bike lanes if new meaningfully cross-cutting side-streets go bike-only.",17,10,5,2,3,1,2,0,14,9,3,2
+41,"My experience is that for some reason Toronto has really adversarial dynamics between cars and bikes, worse than other cities.",1,1,0,0,0,0,0,0,1,1,0,0
+42,"The province being adversarial with city means less incentive for city to run reversible pilots, and so is bad for province's own goals",1,1,0,0,0,0,0,0,1,1,0,0
+43,"Toronto has adversarial dynamics between cars and bikes.",15,14,0,1,3,3,0,0,12,11,0,1
+44,"The province being adversarial with city means less incentive for city to run reversible pilots.",15,12,0,3,3,2,0,1,12,10,0,2
+45,"Bikes are recreational things only - not major commuter tools",11,2,9,0,2,2,0,0,9,0,9,0
+46,"Cars should not park or stop on bike lanes as bikes should not park or stop on car lanes",13,11,1,1,1,1,0,0,12,10,1,1
+47,"Bike lanes infrastructure and usage is dependant on weather conditions and seasons",12,6,6,0,1,1,0,0,11,5,6,0
+48,"Streets are for life, not just for passing through and bike lanes support local life.",9,9,0,0,1,1,0,0,8,8,0,0
+49,"Anything - including bike lanes -that slows down traffic is good for safety and city life.",11,5,2,4,1,0,1,0,10,5,1,4
+50,"Whether to remove bike lanes should be based on data, not politics, not assumptions.",12,11,0,1,1,1,0,0,11,10,0,1
+51,"Effective cycling infrastructure requires a network, not isolated branches.",10,10,0,0,1,1,0,0,9,9,0,0
+52,"For bike lanes (cycle tracks) to be effective they need to be maintained, especially in winter.",10,9,1,0,1,0,1,0,9,9,0,0
+53,"Municipal budgets go farther supporting cycle tracks than more automobile/truck lanes.",11,9,1,1,1,0,1,0,10,9,0,1
+54,"bikes are the future",11,7,3,1,1,1,0,0,10,6,3,1
+55,"correlation between bike lanes and traffic isn't straightforward. need ways to estimate the impact and test assumptions of how they interact",9,8,1,0,1,1,0,0,8,7,1,0
+56,"Bike lanes only work/ are safe if planned across the city, connecting all streets. Without puts everyone in danger.",3,3,0,0,0,0,0,0,3,3,0,0
+57,"Education on rules, responsibilities and regulation on biking within the city by all citizens to make it more effective and safer for all.",7,5,1,1,1,0,1,0,6,5,0,1
+58,"Bike licensing and education (similar to car licensing) would legitimize cycling and make it safer",6,2,3,1,1,0,1,0,5,2,2,1
+59,"No amount of additional car lanes will reduce traffic, because more car lanes lead to more people driving",4,4,0,0,1,1,0,0,3,3,0,0
+60,"The best way to reduce traffic is reducing the # of cars; the best way to do that is to build infrastructure for other forms of transport",4,4,0,0,0,0,0,0,4,4,0,0
+61,"Safety is the number one barrier for cycling adoption, and connected bike infrastructure is critical for cyclists feeling safe",5,4,0,1,0,0,0,0,5,4,0,1
+62,"Bike lanes can be maintained in winter just like car lanes are maintained",2,2,0,0,0,0,0,0,2,2,0,0
+63,"Cycling improves health outcomes and quality of life for non-cyclists by improving air quality and reducing noise",7,7,0,0,0,0,0,0,7,7,0,0
+64,"Bike infrastructure allows kids to learn to cycle early, making them more likely to be lifelong cyclists",5,5,0,0,0,0,0,0,5,5,0,0
+65,"Suburban/out-of-city drivers should want more bike lanes and cyclists, because they clear the road for them",6,6,0,0,1,1,0,0,5,5,0,0
+66,"Cities like Paris prove that rapid and positive changes in bike infrastructure are possible!",4,4,0,0,1,1,0,0,3,3,0,0
+67,"Building more physically durable bike infrastructure, like the College bike lanes, also makes it more politically durable",4,4,0,0,0,0,0,0,4,4,0,0
+68,"Downtown bike lanes have higher possible throughput than downtown car lanes",4,4,0,0,1,1,0,0,3,3,0,0
+69,"Bike infrastructure is easier and cheaper to maintain than car infrastructure, because bikes damage roads far less than cars",4,4,0,0,1,1,0,0,3,3,0,0
+70,"There is no way for Toronto to meet its climate goals without a significant transition away from driving",8,7,0,1,1,1,0,0,7,6,0,1
+71,"If Toronto continues to densify while relying on cars, traffic will become completely untenable",6,6,0,0,1,1,0,0,5,5,0,0
+72,"The rapid drop in battery size and cost will lead to e-bikes making cycling more accessible to wide swathes of the population",5,5,0,0,1,1,0,0,4,4,0,0
+73,"Not every car trip can be a bike trip. However, reducing the trips that do not need to be taken by car, can reduce traffic for trips that do",4,4,0,0,0,0,0,0,4,4,0,0
+74,"We need to increase the capacity of our existing road space by investing in more space efficient modes like transit and bike lanes",6,6,0,0,1,1,0,0,5,5,0,0
+75,"Some major congestion in Toronto is caused by inefficient road design - street parking allowed on Bayview, Allen Road intersection, etc.",5,5,0,0,1,1,0,0,4,4,0,0
+76,"Toronto is expensive and we should invest in low-cost transportation like biking and public transit to make our city accessible and fair",5,5,0,0,0,0,0,0,5,5,0,0
+77,"More enforcement is needed to ensure ebikes are going at safe speeds",3,1,1,1,1,0,1,0,2,1,0,1
+78,"More enforcement is needed to ensure ebikes and scooters are following the rules of the road",4,1,3,0,1,0,1,0,3,1,2,0
+79,"Ebikes that can go beyond the regulated speed are dangerous for pedestrians and cars",4,3,0,1,1,0,0,1,3,3,0,0
+80,"Bike lanes only work/ are safe if planned across the city, connecting all streets.",2,1,1,0,0,0,0,0,2,1,1,0
+81,"Without a city spanning bike lane network everyone is put in danger.",2,1,1,0,0,0,0,0,2,1,1,0
