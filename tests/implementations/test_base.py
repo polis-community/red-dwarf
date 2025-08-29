@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 from reddwarf.implementations.base import run_pipeline
 from reddwarf.data_loader import Loader
-from tests.fixtures import polis_convo_data
+from tests.fixtures import polis_convo_data, convert_ids
+from tests import helpers
 
 
 ## Determinism via random_seed for run_pipeline()
@@ -10,13 +11,14 @@ from tests.fixtures import polis_convo_data
 
 @pytest.mark.parametrize("reducer", ["pca", "pacmap", "localmap"])
 @pytest.mark.parametrize("polis_convo_data", ["small-no-meta"], indirect=True)
-def test_run_pipeline_deterministic_with_random_state(reducer, polis_convo_data):
+def test_run_pipeline_deterministic_with_random_state(reducer, polis_convo_data, convert_ids):
     """Test that setting random_state results in the same participant_projections twice in a row."""
     fixture = polis_convo_data
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes = loader.votes_data
+    votes =  convert_ids(loader.votes_data)
+
 
     random_state = 42
 
@@ -44,13 +46,13 @@ def test_run_pipeline_deterministic_with_random_state(reducer, polis_convo_data)
 
 @pytest.mark.parametrize("reducer", ["pacmap", "localmap"])
 @pytest.mark.parametrize("polis_convo_data", ["small-no-meta"], indirect=True)
-def test_run_pipeline_not_deterministic_without_random_state(reducer, polis_convo_data):
+def test_run_pipeline_not_deterministic_without_random_state(reducer, polis_convo_data, convert_ids):
     """Test that not setting random_state results in different participant_projections across runs."""
     fixture = polis_convo_data
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes = loader.votes_data
+    votes = convert_ids(loader.votes_data)
 
     # Run pipeline twice without random_state (should be non-deterministic)
     result_1 = run_pipeline(votes=votes, reducer=reducer, random_state=None)
@@ -80,14 +82,14 @@ def test_run_pipeline_not_deterministic_without_random_state(reducer, polis_conv
 @pytest.mark.parametrize("reducer", ["pca"])
 @pytest.mark.parametrize("polis_convo_data", ["small-no-meta"], indirect=True)
 def test_run_pipeline_pca_still_deterministic_without_random_state(
-    reducer, polis_convo_data
+    reducer, polis_convo_data, convert_ids
 ):
     """Test that not setting random_state for PCA is still deterministic across runs."""
     fixture = polis_convo_data
 
     # Load test data
     loader = Loader(filepaths=[f"{fixture.data_dir}/votes.json"])
-    votes = loader.votes_data
+    votes = convert_ids(loader.votes_data)
 
     # Run pipeline twice without random_state (PCA should still be deterministic)
     result_1 = run_pipeline(votes=votes, reducer=reducer, random_state=None)
