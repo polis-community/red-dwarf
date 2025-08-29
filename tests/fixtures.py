@@ -3,6 +3,7 @@ import pytest
 import json
 import re
 from dataclasses import dataclass
+from tests import helpers
 
 REPORT_ID_RE = r"^r[a-z0-9]{20}$"
 CONVO_ID_RE = r"^\d[a-z0-9]{4,9}$"
@@ -107,3 +108,12 @@ def polis_convo_data(request):
             return
 
     raise ValueError("No fixture matching local or remote fixture data found")
+
+@pytest.fixture(params=[True, False], ids=["with_id_strings", "without_id_strings"])
+def convert_ids(request):
+    """Optionally converts IDs to strings using helpers.convert_ids_to_strings."""
+    def _apply(votes):
+        if request.param:
+            return helpers.convert_ids_to_strings(votes)
+        return votes
+    return _apply
