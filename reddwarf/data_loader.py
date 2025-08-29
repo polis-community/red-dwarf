@@ -702,11 +702,11 @@ class Loader:
 
     def load_file_data(self):
         """
-        Load data from local JSON files specified in self.filepaths.
+        Load data from local JSON and CSV files specified in self.filepaths.
 
         Automatically detects file types based on filename patterns:
-        - votes.json: Vote records
-        - comments.json: Statement/comment data
+        - votes.json/votes.csv: Vote records
+        - comments.json/comments.csv: Statement/comment data
         - conversation.json: Conversation metadata
         - math-pca2.json: Mathematical analysis results
 
@@ -714,9 +714,9 @@ class Loader:
             ValueError: If a file type cannot be determined from its name.
         """
         for f in self.filepaths:
-            if f.endswith("votes.json"):
+            if f.endswith("votes.json") or f.endswith("votes.csv"):
                 self.load_file_data_votes(file=f)
-            elif f.endswith("comments.json"):
+            elif f.endswith("comments.json") or f.endswith("comments.csv"):
                 self.load_file_data_comments(file=f)
             elif f.endswith("conversation.json"):
                 self.load_file_data_conversation(file=f)
@@ -727,28 +727,44 @@ class Loader:
 
     def load_file_data_votes(self, file=None):
         """
-        Load vote data from a local JSON file.
+        Load vote data from a local JSON or CSV file.
 
         Args:
-            file (str): Path to the votes JSON file.
+            file (str): Path to the votes JSON or CSV file.
         """
-        with open(file) as f:
-            votes_data = json.load(f)
+        if file.endswith(".csv"):
+            with open(file) as f:
+                reader = csv.DictReader(f)
+                votes_data = [
+                    Vote(**vote).model_dump(mode="json") for vote in list(reader)
+                ]
+        else:  # JSON format
+            with open(file) as f:
+                votes_data = json.load(f)
+            votes_data = [Vote(**vote).model_dump(mode="json") for vote in votes_data]
 
-        votes_data = [Vote(**vote).model_dump(mode="json") for vote in votes_data]
         self.votes_data = votes_data
 
     def load_file_data_comments(self, file=None):
         """
-        Load statement/comment data from a local JSON file.
+        Load statement/comment data from a local JSON or CSV file.
 
         Args:
-            file (str): Path to the comments JSON file.
+            file (str): Path to the comments JSON or CSV file.
         """
-        with open(file) as f:
-            comments_data = json.load(f)
+        if file.endswith(".csv"):
+            with open(file) as f:
+                reader = csv.DictReader(f)
+                comments_data = [
+                    Statement(**c).model_dump(mode="json") for c in list(reader)
+                ]
+        else:  # JSON format
+            with open(file) as f:
+                comments_data = json.load(f)
+            comments_data = [
+                Statement(**c).model_dump(mode="json") for c in comments_data
+            ]
 
-        comments_data = [Statement(**c).model_dump(mode="json") for c in comments_data]
         self.comments_data = comments_data
 
     def load_file_data_conversation(self, file=None):
