@@ -1,0 +1,12 @@
+- [x] get polis_convo_data fixture working
+- [x] easier matplotlib diagrams
+- [x] return comment stats in polis implementation
+- [x] return PCA or pipeline object from polis implementation
+- [x] return vote_matrix from polis implementation
+- [x] convert optimal kmeans checks to gridsearchcv
+    - https://chatgpt.com/c/67fbfcaf-7e4c-800b-9270-843beff08e40
+- [x] add `print_repness()` helper function.
+- [ ] generate comment priorities
+- [ ] return comment priorities in polis implementation
+- [ ] add `print_consensus()` helper function.
+- [ ] figure out why small-with-meta isn't working

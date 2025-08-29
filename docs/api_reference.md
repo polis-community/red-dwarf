@@ -104,6 +104,12 @@ use in Scikit-Learn workflows, pipelines, and APIs.
     options:
         show_root_heading: true
 
+## `reddwarf.data_loader`
+
+### ::: reddwarf.data_loader.Loader
+    options:
+        show_root_heading: true
+
 ## `reddwarf.data_presenter`
 
 ### ::: reddwarf.data_presenter.generate_figure
