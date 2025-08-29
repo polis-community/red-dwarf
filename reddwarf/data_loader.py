@@ -100,7 +100,7 @@ class Loader:
                 self.data_source = "csv_export"
 
             if self.data_source == "csv_export":
-                self.load_remote_export_data()
+                self.load_csv_export_data()
             elif self.data_source == "api":
                 self.load_api_data()
             else:
@@ -562,55 +562,70 @@ class Loader:
             # No statements loaded, so can't say.
             return False
 
-    def load_remote_export_data(self):
+    def load_csv_export_data(self):
         """
-        Load data from remote CSV export endpoints.
+        Load data from remote CSV export endpoints or local CSV files.
 
-        Downloads and processes CSV files from Polis export directory, including:
+        Downloads and processes CSV files from Polis export directory, or loads from
+        local filesystem when no protocol is specified, including:
         - comments.csv: Statement data
         - votes.csv: Vote records
 
-        Handles missing is_meta field by falling back to API data when necessary.
+        For remote sources, handles missing is_meta field by falling back to API data when necessary.
+        For local sources, skips API enrichment since conversation_id/report_id are not available.
         Automatically filters duplicate votes, keeping the most recent.
 
         Raises:
             ValueError: If CSV export URL cannot be determined or API fallback fails.
         """
         if self.directory_url:
-            directory_url = self.directory_url
+            directory_path = self.directory_url
         elif self.report_id:
-            directory_url = self.get_polis_export_directory_url(self.report_id)
+            directory_path = self.get_polis_export_directory_url(self.report_id)
         else:
             raise ValueError(
                 "Cannot determine CSV export URL without report_id or directory_url"
             )
 
-        self.load_remote_export_data_comments(directory_url)
-        self.load_remote_export_data_votes(directory_url)
+        # Check if this is a local path (no protocol) or remote URL
+        is_local_path = not (
+            directory_path.startswith("http://")
+            or directory_path.startswith("https://")
+        )
 
-        # Supplement is_meta statement field via API if missing.
-        # See: https://github.com/polis-community/red-dwarf/issues/55
-        if self._is_statement_meta_field_missing():
-            import warnings
+        if is_local_path:
+            self.load_local_export_data_comments(directory_path)
+            self.load_local_export_data_votes(directory_path)
 
-            warnings.warn(
-                "CSV import is missing is_meta field. Attempting to load comments data from API instead..."
-            )
-            try:
-                if self.report_id and not self.conversation_id:
-                    self.load_api_data_report()
-                    self.conversation_id = self.report_data["conversation_id"]
-                self.load_api_data_comments()
-            except Exception:
-                raise ValueError(
-                    " ".join(
-                        [
-                            "Due to an upstream bug, we must patch CSV exports using the API,",
-                            "so conversation_id or report_id is required.",
-                            "See: https://github.com/polis-community/red-dwarf/issues/56",
-                        ]
-                    )
+            # Skip API enrichment for local files since we don't have conversation_id/report_id
+            # and can't make external calls
+        else:
+            self.load_remote_export_data_comments(directory_path)
+            self.load_remote_export_data_votes(directory_path)
+
+            # Supplement is_meta statement field via API if missing.
+            # See: https://github.com/polis-community/red-dwarf/issues/55
+            if self._is_statement_meta_field_missing():
+                import warnings
+
+                warnings.warn(
+                    "CSV import is missing is_meta field. Attempting to load comments data from API instead..."
                 )
+                try:
+                    if self.report_id and not self.conversation_id:
+                        self.load_api_data_report()
+                        self.conversation_id = self.report_data["conversation_id"]
+                    self.load_api_data_comments()
+                except Exception:
+                    raise ValueError(
+                        " ".join(
+                            [
+                                "Due to an upstream bug, we must patch CSV exports using the API,",
+                                "so conversation_id or report_id is required.",
+                                "See: https://github.com/polis-community/red-dwarf/issues/56",
+                            ]
+                        )
+                    )
 
         # When multiple votes (same tid and pid), keep only most recent (vs first).
         self.filter_duplicate_votes(keep="recent")
@@ -645,6 +660,52 @@ class Loader:
         self.votes_data = [
             Vote(**vote).model_dump(mode="json") for vote in list(reader)
         ]
+
+    def load_local_export_data_comments(self, directory_path):
+        """
+        Load statement/comment data from local CSV export.
+
+        Args:
+            directory_path (str): Local directory path containing the CSV files.
+        """
+        # Find the comments CSV file (may have prefixed filename)
+        comments_file_path = None
+        for filename in os.listdir(directory_path):
+            if filename.endswith("comments.csv"):
+                comments_file_path = os.path.join(directory_path, filename)
+                break
+
+        if not comments_file_path:
+            raise FileNotFoundError(f"No comments.csv file found in {directory_path}")
+
+        with open(comments_file_path, "r") as f:
+            reader = csv.DictReader(f)
+            self.comments_data = [
+                Statement(**c).model_dump(mode="json") for c in list(reader)
+            ]
+
+    def load_local_export_data_votes(self, directory_path):
+        """
+        Load vote data from local CSV export.
+
+        Args:
+            directory_path (str): Local directory path containing the CSV files.
+        """
+        # Find the votes CSV file (may have prefixed filename)
+        votes_file_path = None
+        for filename in os.listdir(directory_path):
+            if filename.endswith("votes.csv"):
+                votes_file_path = os.path.join(directory_path, filename)
+                break
+
+        if not votes_file_path:
+            raise FileNotFoundError(f"No votes.csv file found in {directory_path}")
+
+        with open(votes_file_path, "r") as f:
+            reader = csv.DictReader(f)
+            self.votes_data = [
+                Vote(**vote).model_dump(mode="json") for vote in list(reader)
+            ]
 
     def filter_duplicate_votes(self, keep="recent"):
         """
