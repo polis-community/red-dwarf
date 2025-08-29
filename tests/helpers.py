@@ -264,4 +264,4 @@ def convert_ids_to_strings(data_list: list) -> list:
 
 def convert_participant_ids_to_strings(participant_ids: list[int]) -> list[str]:
     """ Convert a list of participant IDs (int) to a list of string IDs"""
-    return [str(pid) for pid in participant_ids]
+    return ["p{}".format(str(pid)) for pid in participant_ids]

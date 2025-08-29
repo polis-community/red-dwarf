@@ -45,6 +45,7 @@ def test_basic_pipeline_execution_with_string_ids(reducer,polis_convo_data):
     preprocessed_mathdata_results = fixture.math_data["user-vote-counts"]
     preprocessed_mathdata_results = {str(k):v for k,v in preprocessed_mathdata_results.items()}
 
+    print(f"preprocessed_mathdata_results:{preprocessed_mathdata_results}\n")
     assert preprocessed_vote_matrix == preprocessed_mathdata_results
 
 
@@ -296,7 +297,9 @@ def setup_test_str(fixture):
     processed_votes = helpers.convert_ids_to_strings(VOTES)    
 
     raw_vote_matrix = matrix.generate_raw_matrix(votes=processed_votes)
-    
+
+    # preprend "p" str to index in order to match converted string id
+    raw_vote_matrix.index = raw_vote_matrix.index.map("p{}".format) 
    
     all_clustered_participant_ids, cluster_labels = (
         polismath.extract_data_from_polismath(fixture.math_data)
@@ -311,5 +314,4 @@ def setup_test_str(fixture):
         vote_matrix=raw_vote_matrix.loc[processed_participant_ids, :],
         cluster_labels=cluster_labels,
     )
-
     return grouped_stats_df, gac_df
