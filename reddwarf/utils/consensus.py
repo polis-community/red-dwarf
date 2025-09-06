@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List, TypedDict
+from typing import List, TypedDict, Dict, Any, Optional
 from reddwarf.utils.matrix import VoteMatrix
 from reddwarf.utils.stats import (
     calculate_comment_statistics,
@@ -31,24 +31,36 @@ class ConsensusResult(TypedDict):
     disagree: List[ConsensusStatement]
 
 
+class GroupedConsensusResult(TypedDict):
+    """A dictionary containing consensus statements for a specific group."""
+    group_id: int
+    group_name: str
+    agree: List[ConsensusStatement]
+    disagree: List[ConsensusStatement]
+
+
 # TODO: Allow setting `pick_max`, `prob_threshold`, or `confidence`` to `None` in
 # order to avoid filtering by that measure.
 def select_consensus_statements(
     vote_matrix: VoteMatrix,
-    mod_out_statement_ids: list[int] = [],
-    pick_max=5,
+    mod_out_statement_ids: list[int] = None,
+    pick_max: int = None,
+    max_limit: int = 100,
     prob_threshold: float = 0.5,
     confidence: float = 0.9,
+    group_id: int = 0,
 ) -> ConsensusResult:
     """
-    Select consensus statements from a given vote matrix.
+    Select consensus statements from a given vote matrix for a specific group.
 
     Args:
         vote_matrix (VoteMatrix): The full raw vote matrix (not just clusterable participants)
         mod_out_statement_ids (Optional[list[int]]): Statements to ignore from consensus statement selection
-        pick_max (int): Max number of statements selected per agree/disagree direction
+        pick_max (int): Max number of statements selected per agree/disagree direction (default: 5)
+        max_limit (int): Maximum allowed value for pick_max (default: 100)
         prob_threshold (float): The cutoff probability below which statements won't be considered for consensus
         confidence (float): Percent confidence interval (in decimal), within which selected statements are deemed significant
+        group_id (int): The group ID to analyze (default: 0)
 
     Returns:
         A dict of agree/disagree formatted statement dicts.
@@ -57,21 +69,21 @@ def select_consensus_statements(
         vote_matrix=vote_matrix,
         cluster_labels=None,
     )
-    # When no labels provided above, mock group is used.
-    MOCK_GID = 0
+    # Use the specified group_id
     df = pd.DataFrame(
         {
-            "na": N_v_g_c[votes.A, MOCK_GID, :],
-            "nd": N_v_g_c[votes.D, MOCK_GID, :],
-            "ns": N_g_c[MOCK_GID, :],
-            "pa": P_v_g_c[votes.A, MOCK_GID, :],
-            "pd": P_v_g_c[votes.D, MOCK_GID, :],
-            "pat": P_v_g_c_test[votes.A, MOCK_GID, :],
-            "pdt": P_v_g_c_test[votes.D, MOCK_GID, :],
+            "statement_id": vote_matrix.columns,  
+            "na": N_v_g_c[votes.A, group_id, :],
+            "nd": N_v_g_c[votes.D, group_id, :],
+            "ns": N_g_c[group_id, :],
+            "pa": P_v_g_c[votes.A, group_id, :],
+            "pd": P_v_g_c[votes.D, group_id, :],
+            "pat": P_v_g_c_test[votes.A, group_id, :],
+            "pdt": P_v_g_c_test[votes.D, group_id, :],
             # agree metric = pa * pat
-            "am": P_v_g_c[votes.A, MOCK_GID, :] * P_v_g_c_test[votes.A, MOCK_GID, :],
+            "am": P_v_g_c[votes.A, group_id, :] * P_v_g_c_test[votes.A, group_id, :],
             # disagree metric = pd * pdt
-            "dm": P_v_g_c[votes.D, MOCK_GID, :] * P_v_g_c_test[votes.D, MOCK_GID, :],
+            "dm": P_v_g_c[votes.D, group_id, :] * P_v_g_c_test[votes.D, group_id, :],
         },
         index=vote_matrix.columns,
     )
@@ -102,6 +114,10 @@ def select_consensus_statements(
     df["consensus_agree_rank"] = agree_candidates["consensus_agree_rank"]
     df["consensus_disagree_rank"] = disagree_candidates["consensus_disagree_rank"]
 
+    # Apply max_limit to pick_max
+    if pick_max is None or pick_max > max_limit:
+        pick_max = max_limit
+        
     # Select top N agree/disagree statements
     if agree_candidates.empty:
         top_agree = []
@@ -109,10 +125,10 @@ def select_consensus_statements(
         top_agree = [
             # Drop the cons-for key from final output.
             {k: v for k, v in st.items() if k != "cons-for"}
-            for st in agree_candidates.sort_values("consensus_agree_rank")
-            .head(pick_max)
-            .reset_index()
-            .apply(format_comment_stats, axis=1)
+            for st in (agree_candidates.sort_values("consensus_agree_rank")
+                     .head(pick_max)
+                     .reset_index()
+                     .apply(format_comment_stats, axis=1))
         ]
 
     if disagree_candidates.empty:
@@ -121,13 +137,64 @@ def select_consensus_statements(
         top_disagree = [
             # Drop the cons-for key from final output.
             {k: v for k, v in st.items() if k != "cons-for"}
-            for st in disagree_candidates.sort_values("consensus_disagree_rank")
-            .head(pick_max)
-            .reset_index()
-            .apply(format_comment_stats, axis=1)
+            for st in (disagree_candidates.sort_values("consensus_disagree_rank")
+                     .head(pick_max)
+                     .reset_index()
+                     .apply(format_comment_stats, axis=1))
         ]
 
     return {
         "agree": top_agree,
         "disagree": top_disagree,
     }
+
+
+def select_grouped_consensus(
+    vote_matrix: VoteMatrix,
+    group_ids: Optional[List[int]] = None,
+    group_names: Optional[Dict[int, str]] = None,
+    **kwargs
+) -> List[GroupedConsensusResult]:
+    """
+    Select consensus statements for multiple groups.
+
+    Args:
+        vote_matrix (VoteMatrix): The full raw vote matrix
+        group_ids (Optional[List[int]]): List of group IDs to analyze. If None, uses all available groups.
+        group_names (Optional[Dict[int, str]]): Mapping of group IDs to group names.
+                                              If None, default names will be used.
+        **kwargs: Additional arguments to pass to select_consensus_statements
+
+    Returns:
+        List[GroupedConsensusResult]: A list of consensus results for each group
+    """
+    if group_ids is None:
+        # If no group_ids provided, use all available groups
+        n_groups = vote_matrix.n_groups if hasattr(vote_matrix, 'n_groups') else 1
+        group_ids = list(range(n_groups))
+    
+    if group_names is None:
+        group_names = {}
+    
+    results = []
+    
+    for group_id in group_ids:
+        # Get group name or use default
+        group_name = group_names.get(group_id, f"Group {group_id}")
+        
+        # Get consensus for this group
+        consensus = select_consensus_statements(
+            vote_matrix=vote_matrix,
+            group_id=group_id,
+            **kwargs
+        )
+        
+        # Add to results
+        results.append({
+            'group_id': group_id,
+            'group_name': group_name,
+            'agree': consensus['agree'],
+            'disagree': consensus['disagree']
+        })
+    
+    return results
