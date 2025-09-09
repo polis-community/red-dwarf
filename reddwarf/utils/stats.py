@@ -659,9 +659,6 @@ def select_representative_statements(
                     best_overall = row
             selected = [best_overall]
 
-        # Sort to put the most representatives first
-        selected = sorted(selected, key=lambda row: row["repness-test"], reverse=True)
-        # Only then, pick up to pick_max statements
         selected = selected[:pick_max]
         # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
         selected = sorted(selected, key=lambda row: row["repful-for"])
