@@ -608,44 +608,49 @@ def select_representative_statements(
         sufficient_statements_row_mask = group_df.apply(sig_filter, axis="columns")
         sufficient_statements = group_df[sufficient_statements_row_mask]
 
-        # Track the best, even if doesn't meet sufficient minimum, to have at least one.
-        best_overall = None
+        actual_confidence = confidence
+        while len(sufficient_statements) == 0 and actual_confidence - 0.10 >= 0:
+            # lower confidence until finding statments
+            actual_confidence = actual_confidence - 0.10
+            sig_filter_updated = lambda row: is_statement_significant(
+                row, actual_confidence
+            )
+            sufficient_statements_row_mask = group_df.apply(
+                sig_filter_updated, axis="columns"
+            )
+            sufficient_statements = group_df[sufficient_statements_row_mask]
+        # Finalize statements into output format.
+        # TODO: Figure out how to finalize only at end in output. Change repness_metric?
+        sufficient_statements = (
+            pd.DataFrame(
+                [
+                    format_comment_stats(row, confidence)
+                    for _, row in sufficient_statements.iterrows()
+                ]
+            )
+            # Create a column to sort repnress, then remove.
+            .assign(repness_metric=repness_metric)
+            .sort_values(by="repness_metric", ascending=False)
+            .drop(columns="repness_metric")
+        )
+
         if len(sufficient_statements) == 0:
+            best_overall = None
             for _, row in group_df.iterrows():
                 if beats_best_by_repness_test(row, best_overall):
                     best_overall = row
+            selected = [best_overall]
         else:
-            # Finalize statements into output format.
-            # TODO: Figure out how to finalize only at end in output. Change repness_metric?
-            sufficient_statements = (
-                pd.DataFrame(
-                    [
-                        format_comment_stats(row, confidence)
-                        for _, row in sufficient_statements.iterrows()
-                    ]
-                )
-                # Create a column to sort repnress, then remove.
-                .assign(repness_metric=repness_metric)
-                .sort_values(by="repness_metric", ascending=False)
-                .drop(columns="repness_metric")
+            selected = [row.to_dict() for _, row in sufficient_statements.iterrows()]
+            # Sort to put the most representatives first
+            selected = sorted(
+                selected, key=lambda row: row["repness-test"], reverse=True
             )
+            # Only then, pick up to pick_max statements
+            selected = selected[:pick_max]
+            # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
+            selected = sorted(selected, key=lambda row: row["repful-for"])
 
-        if best_overall is not None:
-            best_overall = format_comment_stats(best_overall, confidence)
-            best_head = [best_overall]
-        else:
-            best_head = []
-
-        selected = best_head
-        selected = selected + [
-            row.to_dict() for _, row in sufficient_statements.iterrows()
-        ]
-        # Sort to put the most representatives first
-        selected = sorted(selected, key=lambda row: row["repness-test"], reverse=True)
-        # Only then, pick up to pick_max statements
-        selected = selected[:pick_max]
-        # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
-        selected = sorted(selected, key=lambda row: row["repful-for"])
         repness[gid] = selected
 
     return repness  # type:ignore
