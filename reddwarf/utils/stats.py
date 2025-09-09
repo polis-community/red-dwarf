@@ -603,18 +603,49 @@ def select_representative_statements(
     for gid, group_df in grouped_stats_df.groupby(level="group_id"):
         # Bring statement_id into regular column.
         group_df = group_df.reset_index()
-        actual_confidence = confidence
 
-        sig_filter = lambda row: is_statement_significant(row, actual_confidence)
+        sig_filter = lambda row: is_statement_significant(row, confidence)
         sufficient_statements_row_mask = group_df.apply(sig_filter, axis="columns")
         sufficient_statements = group_df[sufficient_statements_row_mask]
 
-        while len(sufficient_statements) == 0 and actual_confidence >= 0.65:
-            # lower confidence until finding statments
-            actual_confidence = actual_confidence - 0.05
-            sig_filter = lambda row: is_statement_significant(row, actual_confidence)
-            sufficient_statements_row_mask = group_df.apply(sig_filter, axis="columns")
-            sufficient_statements = group_df[sufficient_statements_row_mask]
+        statements_by_confidence = {}
+        statements_by_confidence[confidence] = sufficient_statements
+        actual_confidence = confidence
+        if confidence > 0.6:
+            # keep decreasing by 0.05 until reaching 0.60
+            for decreased_confidence in [
+                round(x, 2)
+                for x in [
+                    confidence - i * 0.05
+                    for i in range(int((confidence - 0.6) / 0.05) + 1)
+                ]
+            ]:
+                sig_filter = lambda row: is_statement_significant(
+                    row, decreased_confidence
+                )
+                sufficient_statements_row_mask = group_df.apply(
+                    sig_filter, axis="columns"
+                )
+                sufficient_statements_test = group_df[sufficient_statements_row_mask]
+                statements_by_confidence[decreased_confidence] = (
+                    sufficient_statements_test
+                )
+            # Step 1: Find all confidences that reach pick_max
+            candidates = [
+                c for c, s in statements_by_confidence.items() if len(s) == pick_max
+            ]
+
+            if candidates:
+                # If there are multiple, pick the highest confidence
+                best_confidence = max(candidates)
+            else:
+                # Otherwise, pick the highest confidence with the largest list below pick_max
+                max_len = max(len(s) for s in statements_by_confidence.values())
+                best_confidence = max(
+                    c for c, s in statements_by_confidence.items() if len(s) == max_len
+                )
+            sufficient_statements = statements_by_confidence[best_confidence]
+            actual_confidence = best_confidence
 
         # Finalize statements into output format.
         # TODO: Figure out how to finalize only at end in output. Change repness_metric?
