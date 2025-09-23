@@ -1,3 +1,4 @@
+from os import stat
 import pandas as pd
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -111,15 +112,27 @@ def get_statement_repful_for(
         return repful_for
 
     # now rat and rdt exist
+    is_agree_sig = False
+    is_disagree_sig = False
     if is_statement_agree_significant(row, confidence):
-        return "agree"
+        is_agree_sig = True
     if is_statement_disagree_significant(row, confidence):
+        is_disagree_sig = True
+    if is_agree_sig and not is_disagree_sig:
+        return "agree"
+    if is_disagree_sig and not is_agree_sig:
         return "disagree"
-    # This should not happen if it is called when the statement has already been identified as significant...
+
     rat, rdt, statement_id = [row[col] for col in ["rat", "rdt", "statement_id"]]
-    print(
-        f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
-    )
+    if is_disagree_sig and is_agree_sig:
+        print(
+            f"Warning: both agree and disagree significant at the same time for statement_id={statement_id}"
+        )
+    else:
+        # This should not happen if it is called when the statement has already been identified as significant...
+        print(
+            f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
+        )
     is_repful_for_agree = rat > rdt
     repful_for = "agree" if is_repful_for_agree else "disagree"
     return repful_for
