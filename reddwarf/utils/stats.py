@@ -68,7 +68,7 @@ def two_prop_test(
 def is_significant(z_val: float, confidence: float = 0.90) -> bool:
     """Test whether z-statistic is significant at 90% confidence (one-tailed, right-side)."""
     critical_value = norm.ppf(confidence)  # 90% confidence level, one-tailed
-    return z_val > critical_value  # rat/rdt can be negative
+    return z_val > critical_value
 
 
 def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
@@ -611,13 +611,13 @@ def select_representative_statements(
         statements_by_confidence = {}
         statements_by_confidence[confidence] = sufficient_statements
         actual_confidence = confidence
-        if confidence > 0.6:
-            # keep decreasing by 0.05 until reaching 0.60
+        if confidence > 0.7:
+            # keep decreasing by 0.05 until reaching 0.70
             for decreased_confidence in [
                 round(x, 2)
                 for x in [
                     confidence - i * 0.05
-                    for i in range(int((confidence - 0.6) / 0.05) + 1)
+                    for i in range(int((confidence - 0.7) / 0.05) + 1)
                 ]
             ]:
                 sig_filter = lambda row: is_statement_significant(
@@ -630,16 +630,16 @@ def select_representative_statements(
                 statements_by_confidence[decreased_confidence] = (
                     sufficient_statements_test
                 )
-            # Step 1: Find all confidences that reach pick_max
+            # Step 1: Find all confidences that reach pick_max - 2
             candidates = [
-                c for c, s in statements_by_confidence.items() if len(s) == pick_max
+                c for c, s in statements_by_confidence.items() if len(s) >= pick_max - 2
             ]
 
             if candidates:
                 # If there are multiple, pick the highest confidence
                 best_confidence = max(candidates)
             else:
-                # Otherwise, pick the highest confidence with the largest list below pick_max
+                # Otherwise, pick the highest confidence with the largest list below pick_max - 2
                 max_len = max(len(s) for s in statements_by_confidence.values())
                 best_confidence = max(
                     c for c, s in statements_by_confidence.items() if len(s) == max_len
@@ -674,6 +674,11 @@ def select_representative_statements(
             selected = selected[:pick_max]
             # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
             selected = sorted(selected, key=lambda row: row["repful-for"])
+
+        # TODO: improve best agree alg
+        if len(selected) > 0 and selected[0] is not None:
+            if selected[0]["repful-for"] == "agree":
+                selected[0]["best-agree"] = True
 
         repness[gid] = selected
 
