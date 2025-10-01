@@ -74,7 +74,10 @@ def is_significant(z_val: float, confidence: float = 0.90) -> bool:
 
 def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pat, rat = [row[col] for col in ["pat", "rat"]]
+    pat, rat, na, nd = [row[col] for col in ["pat", "rat", "na", "nd"]]
+    # Explicitly don't allow something that hasn't been voted on at all
+    if na == 0 and nd == 0:
+        return False
     is_agreement_significant = is_significant(pat, confidence) and is_significant(
         rat, confidence
     )
@@ -83,7 +86,10 @@ def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
 
 def is_statement_disagree_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pdt, rdt = [row[col] for col in ["pdt", "rdt"]]
+    pdt, rdt, na, nd = [row[col] for col in ["pdt", "rdt", "na", "nd"]]
+    # Explicitly don't allow something that hasn't been voted on at all
+    if na == 0 and nd == 0:
+        return False
     is_disagreement_significant = is_significant(pdt, confidence) and is_significant(
         rdt, confidence
     )
@@ -652,11 +658,8 @@ def select_representative_statements(
                 # If there are multiple, pick the highest confidence
                 best_confidence = max(candidates)
             else:
-                # Otherwise, pick the highest confidence with the largest list below pick_max - 2
-                max_len = max(len(s) for s in statements_by_confidence.values())
-                best_confidence = max(
-                    c for c, s in statements_by_confidence.items() if len(s) == max_len
-                )
+                # Otherwise, pick the highest confidence
+                best_confidence = max(statements_by_confidence.items())
             sufficient_statements = statements_by_confidence[best_confidence]
             actual_confidence = best_confidence
 
