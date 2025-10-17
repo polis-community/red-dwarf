@@ -12,20 +12,8 @@ from reddwarf.helpers import CachedLimiterSession, CloudflareBypassHTTPAdapter
 
 ua = UserAgent()
 
-
-class Loader:
-    def __init__(
-        self,
-        polis_instance_url=None,
-        filepaths=[],
-        polis_id=None,
-        conversation_id=None,
-        report_id=None,
-        is_cache_enabled=True,
-        output_dir=None,
-        data_source="api",
-        directory_url=None,
-    ):
+class Loader():
+    def __init__(self, polis_instance_url=None, filepaths=[], polis_id=None, conversation_id=None, report_id=None, is_cache_enabled=True, output_dir=None, data_source="api", directory_url=None):
         self.polis_instance_url = polis_instance_url or "https://pol.is"
         self.polis_id = report_id or conversation_id or polis_id
         self.conversation_id = conversation_id
@@ -45,12 +33,7 @@ class Loader:
 
         if self.filepaths:
             self.load_file_data()
-        elif (
-            self.conversation_id
-            or self.report_id
-            or self.polis_id
-            or self.directory_url
-        ):
+        elif self.conversation_id or self.report_id or self.polis_id or self.directory_url:
             self.populate_polis_ids()
             self.init_http_client()
             if self.directory_url:
@@ -92,19 +75,19 @@ class Loader:
 
     def _export_data_json(self, output_dir):
         if self.votes_data:
-            with open(output_dir + "/votes.json", "w") as f:
+            with open(output_dir + "/votes.json", 'w') as f:
                 f.write(json.dumps(self.votes_data, indent=4))
 
         if self.comments_data:
-            with open(output_dir + "/comments.json", "w") as f:
+            with open(output_dir + "/comments.json", 'w') as f:
                 f.write(json.dumps(self.comments_data, indent=4))
 
         if self.math_data:
-            with open(output_dir + "/math-pca2.json", "w") as f:
+            with open(output_dir + "/math-pca2.json", 'w') as f:
                 f.write(json.dumps(self.math_data, indent=4))
 
         if self.conversation_data:
-            with open(output_dir + "/conversation.json", "w") as f:
+            with open(output_dir + "/conversation.json", 'w') as f:
                 f.write(json.dumps(self.conversation_data, indent=4))
 
     def _export_data_csv(self, output_dir):
@@ -122,22 +105,20 @@ class Loader:
         if not self.votes_data:
             return
 
-        sorted_votes_data = sorted(
-            self.votes_data, key=lambda x: (x["statement_id"], x["participant_id"])
-        )
-        with open(output_dir + "/votes.csv", "w") as f:
+        sorted_votes_data = sorted(self.votes_data, key=lambda x: (x["statement_id"], x["participant_id"]))
+        with open(output_dir + "/votes.csv", 'w') as f:
             writer = csv.writer(f)
             headers = ["timestamp", "datetime", "comment-id", "voter-id", "vote"]
             writer.writerow(headers)
             for entry in sorted_votes_data:
                 ts, dt_str = self._format_polis_times(entry["modified"])
                 row = [
-                    ts,
-                    dt_str,
-                    entry["statement_id"],
-                    entry["participant_id"],
-                    entry["vote"],
-                ]
+                        ts,
+                        dt_str,
+                        entry["statement_id"],
+                        entry["participant_id"],
+                        entry["vote"]
+                    ]
                 writer.writerow(row)
 
     def _write_polis_comments(self, output_dir):
@@ -148,17 +129,8 @@ class Loader:
         if not self.comments_data:
             return
 
-        with open(output_dir + "/comments.csv", "w") as f:
-            headers = [
-                "timestamp",
-                "datetime",
-                "comment-id",
-                "author-id",
-                "agrees",
-                "disagrees",
-                "moderated",
-                "comment-body",
-            ]
+        with open(output_dir + "/comments.csv", 'w') as f:
+            headers = ["timestamp","datetime","comment-id","author-id","agrees","disagrees","moderated","comment-body"]
             f.write(",".join(headers) + "\n")
             # Sort comments_data by 'created' timestamp before writing
             sorted_comments = sorted(
@@ -170,21 +142,20 @@ class Loader:
                 single_quote = '"'
                 double_quote = '""'
                 row = [
-                    ts,
-                    dt_str,
-                    entry["statement_id"],
-                    entry["participant_id"],
-                    entry["agree_count"],
-                    entry["disagree_count"],
-                    entry["moderated"],
-                    f'"{str(entry["txt"]).replace(single_quote, double_quote)}"',
-                ]
+                        ts,
+                        dt_str,
+                        entry["statement_id"],
+                        entry["participant_id"],
+                        entry["agree_count"],
+                        entry["disagree_count"],
+                        entry["moderated"],
+                        f'"{str(entry["txt"]).replace(single_quote, double_quote)}"',
+                    ]
                 f.write(",".join([str(item) for item in row]) + "\n")
 
     def _format_polis_times(self, time):
         """Convert timestamp or ISO string to Polis datetime format."""
         from dateutil import parser
-
         try:
             if isinstance(time, (int, float)):
                 # Handle timestamps
@@ -197,9 +168,7 @@ class Loader:
                     date_obj = date_obj.replace(tzinfo=timezone.utc)
 
             date_obj = date_obj.astimezone(timezone.utc)
-            dt_str = date_obj.strftime(
-                "%a %b %d %Y %H:%M:%S GMT+0000 (Coordinated Universal Time)"
-            )
+            dt_str = date_obj.strftime('%a %b %d %Y %H:%M:%S GMT+0000 (Coordinated Universal Time)')
 
             return int(date_obj.timestamp()), dt_str
         except (ValueError, OSError) as error:
@@ -219,68 +188,48 @@ class Loader:
         group_clusters = self.math_data.get("group-clusters", [])
         group_ids = [group["id"] for group in group_clusters]
         # Map group indices to letters: 0 -> 'a', 1 -> 'b', etc.
-        group_letters = [chr(ord("a") + i) for i in range(len(group_ids))]
+        group_letters = [chr(ord('a') + i) for i in range(len(group_ids))]
 
-        with open(output_dir + "/comment-groups.csv", "w") as f:
+        with open(output_dir + "/comment-groups.csv", 'w') as f:
             # Build header dynamically based on available groups
-            header = [
-                "comment-id",
-                "comment",
-                "total-votes",
-                "total-agrees",
-                "total-disagrees",
-                "total-passes",
-            ]
+            header = ["comment-id", "comment", "total-votes", "total-agrees", "total-disagrees", "total-passes"]
             for i, group in enumerate(group_clusters):
                 if i < len(group_letters):
                     group_letter = group_letters[i]
-                    header.extend(
-                        [
-                            f"group-{group_letter}-votes",
-                            f"group-{group_letter}-agrees",
-                            f"group-{group_letter}-disagrees",
-                            f"group-{group_letter}-passes",
-                        ]
-                    )
+                    header.extend([
+                        f"group-{group_letter}-votes",
+                        f"group-{group_letter}-agrees",
+                        f"group-{group_letter}-disagrees",
+                        f"group-{group_letter}-passes"
+                    ])
             f.write(",".join(header))
             f.write("\n")
             rows = []
-            sorted_comments_data = sorted(
-                self.comments_data, key=lambda x: x["statement_id"]
-            )
+            sorted_comments_data = sorted(self.comments_data, key=lambda x: x["statement_id"])
             for comment in sorted_comments_data:
                 comment_id = str(comment["statement_id"])
                 row = [
                     comment_id,
-                    comment["txt"]
-                    if comment["txt"][0] == '"'
-                    else '"' + comment["txt"] + '"',
+                    comment["txt"] if comment["txt"][0] == '"' else '"' + comment["txt"] + '"',
                     comment["count"],
                     comment["agree_count"],
                     comment["disagree_count"],
-                    comment["pass_count"],
+                    comment["pass_count"]
                 ]
 
                 # Add group-specific data
                 for i, group in enumerate(group_clusters):
                     if i < len(group_letters):
                         group_id = str(group["id"])
-                        if (
-                            group_id in group_votes
-                            and comment_id in group_votes[group_id]["votes"]
-                        ):
+                        if group_id in group_votes and comment_id in group_votes[group_id]["votes"]:
                             vote_data = group_votes[group_id]["votes"][comment_id]
-                            total_votes = (
-                                vote_data["A"] + vote_data["D"] + vote_data["S"]
-                            )
-                            row.extend(
-                                [
-                                    total_votes,
-                                    vote_data["A"],  # agrees
-                                    vote_data["D"],  # disagrees
-                                    vote_data["S"],  # passes (skips)
-                                ]
-                            )
+                            total_votes = vote_data["A"] + vote_data["D"] + vote_data["S"]
+                            row.extend([
+                                total_votes,
+                                vote_data["A"],  # agrees
+                                vote_data["D"],  # disagrees
+                                vote_data["S"]   # passes (skips)
+                            ])
                         else:
                             # No votes from this group for this comment
                             row.extend([0, 0, 0, 0])
@@ -337,20 +286,11 @@ class Loader:
         if self.comments_data:
             for comment in self.comments_data:
                 pid = comment["participant_id"]
-                participant_comment_counts[pid] = (
-                    participant_comment_counts.get(pid, 0) + 1
-                )
+                participant_comment_counts[pid] = participant_comment_counts.get(pid, 0) + 1
 
-        with open(output_dir + "/participant-votes.csv", "w") as f:
+        with open(output_dir + "/participant-votes.csv", 'w') as f:
             # Build header
-            header = [
-                "participant",
-                "group-id",
-                "n-comments",
-                "n-votes",
-                "n-agree",
-                "n-disagree",
-            ]
+            header = ["participant", "group-id", "n-comments", "n-votes", "n-agree", "n-disagree"]
             header.extend([str(sid) for sid in sorted_statement_ids])
             f.write(",".join(header) + "\n")
 
@@ -369,7 +309,14 @@ class Loader:
                 # Get comment count
                 n_comments = participant_comment_counts.get(pid, 0)
 
-                row = [pid, group_id, n_comments, n_votes, n_agree, n_disagree]
+                row = [
+                    pid,
+                    group_id,
+                    n_comments,
+                    n_votes,
+                    n_agree,
+                    n_disagree
+                ]
 
                 # Add vote for each statement
                 for sid in sorted_statement_ids:
@@ -394,48 +341,33 @@ class Loader:
             return
 
         # Calculate summary statistics
-        total_voters = (
-            len(set(vote["participant_id"] for vote in self.votes_data))
-            if self.votes_data
-            else 0
-        )
-        total_commenters = (
-            len(set(comment["participant_id"] for comment in self.comments_data))
-            if self.comments_data
-            else 0
-        )
+        total_voters = len(set(vote["participant_id"] for vote in self.votes_data)) if self.votes_data else 0
+        total_commenters = len(set(comment["participant_id"] for comment in self.comments_data)) if self.comments_data else 0
         total_comments = len(self.comments_data) if self.comments_data else 0
-        total_groups = (
-            len(self.math_data.get("group-clusters", [])) if self.math_data else 0
-        )
+        total_groups = len(self.math_data.get("group-clusters", [])) if self.math_data else 0
 
         # Get conversation details
         topic = self.conversation_data.get("topic", "")
         description = self.conversation_data.get("description", "")
         if description:
-            description = (
-                description.replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-            )
+            description = description.replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
 
         # Build URL
         url = (
             f"{self.polis_instance_url}/{self.conversation_id}"
             if self.conversation_id
-            else self.polis_id
-            if self.polis_id
+            else self.polis_id if self.polis_id
             else self.report_id
         )
 
-        with open(output_dir + "/summary.csv", "w") as f:
+        with open(output_dir + "/summary.csv", 'w') as f:
             f.write(f'topic,"{topic}"\n')
-            f.write(f"url,{url}\n")
-            f.write(f"voters,{total_voters}\n")
-            f.write(f"voters-in-conv,{total_voters}\n")
-            f.write(f"commenters,{total_commenters}\n")
-            f.write(f"comments,{total_comments}\n")
-            f.write(f"groups,{total_groups}\n")
+            f.write(f'url,{url}\n')
+            f.write(f'voters,{total_voters}\n')
+            f.write(f'voters-in-conv,{total_voters}\n')
+            f.write(f'commenters,{total_commenters}\n')
+            f.write(f'comments,{total_comments}\n')
+            f.write(f'groups,{total_groups}\n')
             f.write(f'conversation-description,"{description}"\n')
 
     def init_http_client(self):
@@ -449,8 +381,8 @@ class Loader:
                 bucket_class=SQLiteBucket,
                 bucket_kwargs={
                     "path": "test_cache.sqlite",
-                    "isolation_level": "EXCLUSIVE",
-                    "check_same_thread": False,
+                    'isolation_level': "EXCLUSIVE",
+                    'check_same_thread': False,
                 },
             )
         else:
@@ -458,7 +390,7 @@ class Loader:
         adapter = CloudflareBypassHTTPAdapter()
         self.session.mount(self.polis_instance_url, adapter)
         self.session.headers = {
-            "User-Agent": ua.random,
+            'User-Agent': ua.random,
         }
 
     def get_polis_export_directory_url(self, report_id):
@@ -477,9 +409,7 @@ class Loader:
         elif self.report_id:
             directory_url = self.get_polis_export_directory_url(self.report_id)
         else:
-            raise ValueError(
-                "Cannot determine CSV export URL without report_id or directory_url"
-            )
+            raise ValueError("Cannot determine CSV export URL without report_id or directory_url")
 
         self.load_remote_export_data_comments(directory_url)
         self.load_remote_export_data_votes(directory_url)
@@ -488,25 +418,18 @@ class Loader:
         # See: https://github.com/polis-community/red-dwarf/issues/55
         if self._is_statement_meta_field_missing():
             import warnings
-
-            warnings.warn(
-                "CSV import is missing is_meta field. Attempting to load comments data from API instead..."
-            )
+            warnings.warn("CSV import is missing is_meta field. Attempting to load comments data from API instead...")
             try:
                 if self.report_id and not self.conversation_id:
                     self.load_api_data_report()
                     self.conversation_id = self.report_data["conversation_id"]
                 self.load_api_data_comments()
             except Exception:
-                raise ValueError(
-                    " ".join(
-                        [
-                            "Due to an upstream bug, we must patch CSV exports using the API,",
-                            "so conversation_id or report_id is required.",
-                            "See: https://github.com/polis-community/red-dwarf/issues/56",
-                        ]
-                    )
-                )
+                raise ValueError(" ".join([
+                    "Due to an upstream bug, we must patch CSV exports using the API,",
+                    "so conversation_id or report_id is required.",
+                    "See: https://github.com/polis-community/red-dwarf/issues/56",
+                ]))
 
         # When multiple votes (same tid and pid), keep only most recent (vs first).
         self.filter_duplicate_votes(keep="recent")
@@ -518,9 +441,7 @@ class Loader:
         r = self.session.get(directory_url + "comments.csv")
         comments_csv = r.text
         reader = csv.DictReader(StringIO(comments_csv))
-        self.comments_data = [
-            Statement(**c).model_dump(mode="json") for c in list(reader)
-        ]
+        self.comments_data = [Statement(**c).model_dump(mode='json') for c in list(reader)]
 
     def load_remote_export_data_votes(self, directory_url):
         r = self.session.get(directory_url + "votes.csv")
@@ -528,9 +449,7 @@ class Loader:
         reader = csv.DictReader(StringIO(votes_csv))
         raw_votes = list(reader)
         filtered_votes = self._filter_negative_statement_ids(raw_votes)
-        self.votes_data = [
-            Vote(**vote).model_dump(mode="json") for vote in filtered_votes
-        ]
+        self.votes_data = [Vote(**vote).model_dump(mode='json') for vote in filtered_votes]
 
     def filter_duplicate_votes(self, keep="recent"):
         if keep not in {"recent", "first"}:
@@ -541,9 +460,7 @@ class Loader:
             reverse_sort = True
         else:
             reverse_sort = False
-        sorted_votes = sorted(
-            self.votes_data, key=lambda x: x["modified"], reverse=reverse_sort
-        )
+        sorted_votes = sorted(self.votes_data, key=lambda x: x["modified"], reverse=reverse_sort)
 
         filtered_dict = {}
         for v in sorted_votes:
@@ -633,7 +550,7 @@ class Loader:
         with open(file) as f:
             comments_data = json.load(f)
 
-        comments_data = [Statement(**c).model_dump(mode="json") for c in comments_data]
+        comments_data = [Statement(**c).model_dump(mode='json') for c in comments_data]
         self.comments_data = comments_data
 
     def load_file_data_conversation(self, file=None):
@@ -652,16 +569,14 @@ class Loader:
         if self.report_id:
             self.load_api_data_report()
             convo_id_from_report_id = self.report_data["conversation_id"]
-            if self.conversation_id and (
-                self.conversation_id != convo_id_from_report_id
-            ):
+            if self.conversation_id and (self.conversation_id != convo_id_from_report_id):
                 raise ValueError("report_id conflicts with conversation_id")
             self.conversation_id = convo_id_from_report_id
 
         self.load_api_data_conversation()
         self.load_api_data_comments()
         self.load_api_data_math()
-        # TODO: Add a way to do this without math data, for example
+         # TODO: Add a way to do this without math data, for example
         # by checking until 5 empty responses in a row.
         # This is the best place to check though, as `voters`
         # in summary.csv omits some participants.
@@ -681,9 +596,7 @@ class Loader:
         params = {
             "conversation_id": self.conversation_id,
         }
-        r = self.session.get(
-            self.polis_instance_url + "/api/v3/conversations", params=params
-        )
+        r = self.session.get(self.polis_instance_url + "/api/v3/conversations", params=params)
         convo = json.loads(r.text)
         self.conversation_data = convo
 
@@ -691,9 +604,7 @@ class Loader:
         params = {
             "conversation_id": self.conversation_id,
         }
-        r = self.session.get(
-            self.polis_instance_url + "/api/v3/math/pca2", params=params
-        )
+        r = self.session.get(self.polis_instance_url + "/api/v3/math/pca2", params=params)
         math = json.loads(r.text)
         self.math_data = math
 
@@ -703,11 +614,9 @@ class Loader:
             "moderation": "true",
             "include_voting_patterns": "true",
         }
-        r = self.session.get(
-            self.polis_instance_url + "/api/v3/comments", params=params
-        )
+        r = self.session.get(self.polis_instance_url + "/api/v3/comments", params=params)
         comments = json.loads(r.text)
-        comments = [Statement(**c).model_dump(mode="json") for c in comments]
+        comments = [Statement(**c).model_dump(mode='json') for c in comments]
         self.comments_data = comments
 
     def fix_participant_vote_sign(self):
@@ -716,22 +625,14 @@ class Loader:
             item["vote"] = -item["vote"]
 
     def load_api_data_votes(self, last_participant_id=None):
-        for pid in range(0, last_participant_id + 1):
+        for pid in range(0, last_participant_id+1):
             params = {
                 "pid": pid,
                 "conversation_id": self.conversation_id,
             }
-            r = self.session.get(
-                self.polis_instance_url + "/api/v3/votes", params=params
-            )
-            raw_participant_votes = json.loads(r.text)
-            filtered_participant_votes = self._filter_negative_statement_ids(
-                raw_participant_votes
-            )
-            participant_votes = [
-                Vote(**vote).model_dump(mode="json")
-                for vote in filtered_participant_votes
-            ]
+            r = self.session.get(self.polis_instance_url + "/api/v3/votes", params=params)
+            participant_votes = json.loads(r.text)
+            participant_votes = [Vote(**vote).model_dump(mode='json') for vote in participant_votes]
             self.votes_data.extend(participant_votes)
 
         self.fix_participant_vote_sign()
@@ -742,9 +643,7 @@ class Loader:
             "xid": xid,
             "conversation_id": self.conversation_id,
         }
-        r = self.session.get(
-            self.polis_instance_url + "/api/v3/participationInit", params=params
-        )
+        r = self.session.get(self.polis_instance_url + "/api/v3/participationInit", params=params)
         data = json.loads(r.text)
 
         return data["ptpt"]["pid"]
