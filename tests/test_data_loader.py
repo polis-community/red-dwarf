@@ -25,7 +25,7 @@ def test_load_data_from_api_conversation():
         'help_color', 'is_data_open', 'is_curated', 'dataset_explanation',
         'write_hint_type', 'subscribe_type', 'org_id', 'need_suzinvite',
         'use_xid_whitelist', 'prioritize_seed', 'importance_enabled',
-        'site_id', 'translations',
+        'site_id', 'translations', 'treevite_enabled',
         'ownername', 'is_mod', 'is_owner', 'conversation_id',
     ]
     assert sorted(loader.conversation_data) == sorted(expected_keys)
@@ -163,7 +163,8 @@ def test_load_data_from_api_report():
         'label_group_8',
         'label_group_9',
         'report_name',
-        'conversation_id'
+        'conversation_id',
+        'mod_level',
     ]
     assert sorted(loader.report_data.keys()) == sorted(expected_keys)
 
