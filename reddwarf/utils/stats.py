@@ -1,4 +1,3 @@
-from os import stat
 import pandas as pd
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -69,15 +68,12 @@ def two_prop_test(
 def is_significant(z_val: float, confidence: float = 0.90) -> bool:
     """Test whether z-statistic is significant at 90% confidence (one-tailed, right-side)."""
     critical_value = norm.ppf(confidence)  # 90% confidence level, one-tailed
-    return z_val > critical_value
+    return z_val > critical_value  # rat/rdt can be negative
 
 
 def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pat, rat, na, nd = [row[col] for col in ["pat", "rat", "na", "nd"]]
-    # Explicitly don't allow something that hasn't been voted on at all
-    if na == 0 and nd == 0:
-        return False
+    pat, rat = [row[col] for col in ["pat", "rat"]]
     is_agreement_significant = is_significant(pat, confidence) and is_significant(
         rat, confidence
     )
@@ -86,10 +82,7 @@ def is_statement_agree_significant(row: pd.Series, confidence=0.90) -> bool:
 
 def is_statement_disagree_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
-    pdt, rdt, na, nd = [row[col] for col in ["pdt", "rdt", "na", "nd"]]
-    # Explicitly don't allow something that hasn't been voted on at all
-    if na == 0 and nd == 0:
-        return False
+    pdt, rdt = [row[col] for col in ["pdt", "rdt"]]
     is_disagreement_significant = is_significant(pdt, confidence) and is_significant(
         rdt, confidence
     )
@@ -118,27 +111,15 @@ def get_statement_repful_for(
         return repful_for
 
     # now rat and rdt exist
-    is_agree_sig = False
-    is_disagree_sig = False
     if is_statement_agree_significant(row, confidence):
-        is_agree_sig = True
-    if is_statement_disagree_significant(row, confidence):
-        is_disagree_sig = True
-    if is_agree_sig and not is_disagree_sig:
         return "agree"
-    if is_disagree_sig and not is_agree_sig:
+    if is_statement_disagree_significant(row, confidence):
         return "disagree"
-
+    # This should not happen if it is called when the statement has already been identified as significant...
     rat, rdt, statement_id = [row[col] for col in ["rat", "rdt", "statement_id"]]
-    if is_disagree_sig and is_agree_sig:
-        print(
-            f"Warning: both agree and disagree significant at the same time for statement_id={statement_id}"
-        )
-    else:
-        # This should not happen if it is called when the statement has already been identified as significant...
-        print(
-            f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
-        )
+    print(
+        f"Warning: using a different method to calculate repful_for for statement_id={statement_id} "
+    )
     is_repful_for_agree = rat > rdt
     repful_for = "agree" if is_repful_for_agree else "disagree"
     return repful_for
@@ -630,13 +611,13 @@ def select_representative_statements(
         statements_by_confidence = {}
         statements_by_confidence[confidence] = sufficient_statements
         actual_confidence = confidence
-        if confidence > 0.7:
-            # keep decreasing by 0.05 until reaching 0.70
+        if confidence > 0.6:
+            # keep decreasing by 0.05 until reaching 0.60
             for decreased_confidence in [
                 round(x, 2)
                 for x in [
                     confidence - i * 0.05
-                    for i in range(int((confidence - 0.7) / 0.05) + 1)
+                    for i in range(int((confidence - 0.6) / 0.05) + 1)
                 ]
             ]:
                 sig_filter = lambda row: is_statement_significant(
@@ -649,17 +630,20 @@ def select_representative_statements(
                 statements_by_confidence[decreased_confidence] = (
                     sufficient_statements_test
                 )
-            # Step 1: Find all confidences that reach pick_max - 2
+            # Step 1: Find all confidences that reach pick_max
             candidates = [
-                c for c, s in statements_by_confidence.items() if len(s) >= pick_max - 2
+                c for c, s in statements_by_confidence.items() if len(s) == pick_max
             ]
 
             if candidates:
                 # If there are multiple, pick the highest confidence
                 best_confidence = max(candidates)
             else:
-                # Otherwise, pick the highest confidence
-                best_confidence = max(statements_by_confidence.items())
+                # Otherwise, pick the highest confidence with the largest list below pick_max
+                max_len = max(len(s) for s in statements_by_confidence.values())
+                best_confidence = max(
+                    c for c, s in statements_by_confidence.items() if len(s) == max_len
+                )
             sufficient_statements = statements_by_confidence[best_confidence]
             actual_confidence = best_confidence
 
@@ -690,11 +674,6 @@ def select_representative_statements(
             selected = selected[:pick_max]
             # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
             selected = sorted(selected, key=lambda row: row["repful-for"])
-
-        # TODO: improve best agree alg
-        if len(selected) > 0 and selected[0] is not None:
-            if selected[0]["repful-for"] == "agree":
-                selected[0]["best-agree"] = True
 
         repness[gid] = selected
 
