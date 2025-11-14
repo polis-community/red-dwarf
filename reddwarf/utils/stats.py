@@ -92,7 +92,7 @@ def is_statement_disagree_significant(row: pd.Series, confidence=0.90) -> bool:
 def is_statement_significant(row: pd.Series, confidence=0.90) -> bool:
     "Decide whether we should count a statement in a group as being representative."
     # Require at least some agree or disagree votes (not just passes)
-    if row["na"] == 0 and row["nd"] == 0
+    if row["na"] == 0 and row["nd"] == 0:
         return False
     is_agreement_significant = is_statement_agree_significant(row, confidence)
     is_disagreement_significant = is_statement_disagree_significant(row, confidence)
