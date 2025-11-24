@@ -1,6 +1,6 @@
-from enum import Enum
 import json
 import os
+import pandas as pd
 from fake_useragent import UserAgent
 from datetime import datetime, timezone, timedelta
 from requests_ratelimiter import SQLiteBucket, LimiterSession
@@ -8,6 +8,7 @@ import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
 from reddwarf.helpers import CachedLimiterSession, CloudflareBypassHTTPAdapter
+from reddwarf.utils.matrix import KeepType, deduplicate_votes
 
 ua = UserAgent()
 
@@ -662,25 +663,13 @@ class Loader:
         if keep not in {"recent", "first"}:
             raise ValueError("Invalid value for 'keep'. Use 'recent' or 'first'.")
 
-        # Sort by modified time (descending for "recent", ascending for "first")
-        if keep == "recent":
-            reverse_sort = True
-        else:
-            reverse_sort = False
-        sorted_votes = sorted(
-            self.votes_data, key=lambda x: x["modified"], reverse=reverse_sort
-        )
+        KEEP_MAP: dict[str, KeepType] = {"recent": "last", "first": "first"}
 
-        filtered_dict = {}
-        for v in sorted_votes:
-            key = (v["participant_id"], v["statement_id"])
-            if key not in filtered_dict:
-                filtered_dict[key] = v
-            else:
-                # Append skipped votes
-                self.skipped_dup_votes.append(v)
+        votes_df = pd.DataFrame(self.votes_data)
+        deduped, skipped = deduplicate_votes(votes_df=votes_df, keep=KEEP_MAP[keep])
 
-        self.votes_data = list(filtered_dict.values())
+        self.skipped_dup_votes = skipped.to_dict(orient="records")
+        self.votes_data = deduped.to_dict(orient="records")
 
     def load_remote_export_data_summary(self):
         # r = self.session.get(self.polis_instance_url + "/api/v3/reportExport/{}/summary.csv".format(self.report_id))
