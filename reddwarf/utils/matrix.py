@@ -7,6 +7,30 @@ from reddwarf.exceptions import RedDwarfError
 
 VoteMatrix: TypeAlias = pd.DataFrame
 
+KeepType = Literal["first", "last", False]
+
+def deduplicate_votes(votes_df: pd.DataFrame, keep: KeepType = "last"):
+    """
+    Deduplicate unsorted vote records so each (participant_id, statement_id) pair
+    appears once.
+
+    Parameters
+    ----------
+    votes_df : pd.DataFrame
+    keep : {"first", "last", False}
+        Passed directly to pandas.drop_duplicates.
+    """
+    sorted_df = votes_df.sort_values("modified", ascending=True)
+
+    deduped = sorted_df.drop_duplicates(
+        subset=["participant_id", "statement_id"],
+        keep=keep
+    )
+
+    skipped = sorted_df.loc[~sorted_df.index.isin(deduped.index)]
+
+    return deduped, skipped
+
 def filter_votes(
         votes: List[Dict],
         cutoff: Optional[int] = None,
@@ -87,7 +111,7 @@ def generate_raw_matrix(
         index="participant_id",
         columns="statement_id",
     )
-    
+
     # Ensure consistent column ordering regardless of statement_id type
     # Sort numerically if all columns can be converted to integers
     # If not all values can be converted to int, fall back to natural sorting
@@ -96,7 +120,7 @@ def generate_raw_matrix(
     except (ValueError, TypeError):
         sorted_columns = sorted(raw_matrix.columns)
     raw_matrix = raw_matrix.reindex(columns=sorted_columns)
-    
+
     # Ensure consistent index
     try:
         sorted_index = sorted(raw_matrix.index, key=lambda x: int(x))
