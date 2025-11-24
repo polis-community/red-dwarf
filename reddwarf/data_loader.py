@@ -1,5 +1,6 @@
 import json
 import os
+from typing_extensions import deprecated
 import pandas as pd
 from fake_useragent import UserAgent
 from datetime import datetime, timezone, timedelta
@@ -614,7 +615,7 @@ class Loader:
                 )
 
         # When multiple votes (same tid and pid), keep only most recent (vs first).
-        self.filter_duplicate_votes(keep="recent")
+        self.filter_duplicate_votes(keep="last")
         # self.load_remote_export_data_summary()
         # self.load_remote_export_data_participant_votes()
         # self.load_remote_export_data_comment_groups()
@@ -647,26 +648,9 @@ class Loader:
             Vote(**vote).model_dump(mode="json") for vote in list(reader)
         ]
 
-    def filter_duplicate_votes(self, keep="recent"):
-        """
-        Remove duplicate votes from the same participant on the same statement.
-
-        Args:
-            keep (str): Which vote to keep when duplicates found.
-                       "recent" keeps the most recent vote, "first" keeps the earliest.
-
-        The filtered duplicate votes are stored in self.skipped_dup_votes for reference.
-
-        Raises:
-            ValueError: If keep parameter is not "recent" or "first".
-        """
-        if keep not in {"recent", "first"}:
-            raise ValueError("Invalid value for 'keep'. Use 'recent' or 'first'.")
-
-        KEEP_MAP: dict[str, KeepType] = {"recent": "last", "first": "first"}
-
+    def filter_duplicate_votes(self, keep: KeepType = "last"):
         votes_df = pd.DataFrame(self.votes_data)
-        deduped, skipped = deduplicate_votes(votes_df=votes_df, keep=KEEP_MAP[keep])
+        deduped, skipped = deduplicate_votes(votes_df=votes_df, keep=keep)
 
         self.skipped_dup_votes = skipped.to_dict(orient="records")
         self.votes_data = deduped.to_dict(orient="records")
