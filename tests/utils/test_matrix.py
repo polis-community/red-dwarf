@@ -1,4 +1,3 @@
-import json
 import pytest
 import pandas as pd
 
@@ -18,15 +17,30 @@ def votes_df(polis_convo_data):
     })
     return df
 
-@pytest.mark.parametrize("polis_convo_data", ["medium-with-meta"], indirect=True)
-def test_deduplicate_votes(votes_df):
-    deduped, skipped = deduplicate_votes(votes_df=votes_df)
+@pytest.mark.parametrize("polis_convo_data", ["medium"], indirect=True)
+def test_deduplicate_votes_df(votes_df):
+    unique, duplicates = deduplicate_votes(votes=votes_df)
 
     assert len(votes_df) == 4798
-    assert len(deduped) == 4789
-    assert len(skipped) == 9
-    assert len(votes_df) == len(deduped) + len(skipped)
+    assert len(unique) == 4789
+    assert len(duplicates) == 9
+    assert len(votes_df) == len(unique) + len(duplicates)
 
-@pytest.mark.parametrize("polis_convo_data", ["medium-with-meta"], indirect=True)
-def test_deduplicate_votes_benchmark(votes_df, benchmark):
-    benchmark(deduplicate_votes, votes_df=votes_df)
+@pytest.mark.parametrize("polis_convo_data", ["medium"], indirect=True)
+def test_deduplicate_votes_dicts(votes_df):
+    votes_dicts = votes_df.to_dict(orient="records")
+    unique, duplicates = deduplicate_votes(votes=votes_df)
+
+    assert len(votes_dicts) == 4798
+    assert len(unique) == 4789
+    assert len(duplicates) == 9
+    assert len(votes_dicts) == len(unique) + len(duplicates)
+
+@pytest.mark.parametrize("polis_convo_data", ["medium"], indirect=True)
+def test_deduplicate_votes_df_benchmark(votes_df, benchmark):
+    benchmark(deduplicate_votes, votes=votes_df)
+
+@pytest.mark.parametrize("polis_convo_data", ["medium"], indirect=True)
+def test_deduplicate_votes_dicts_benchmark(votes_df, benchmark):
+    votes_dicts = votes_df.to_dict(orient="records")
+    benchmark(deduplicate_votes, votes=votes_dicts)

@@ -9,27 +9,41 @@ VoteMatrix: TypeAlias = pd.DataFrame
 
 KeepType = Literal["first", "last", False]
 
-def deduplicate_votes(votes_df: pd.DataFrame, keep: KeepType = "last"):
+def deduplicate_votes(votes: pd.DataFrame | list, keep: KeepType = "last"):
     """
     Deduplicate unsorted vote records so each (participant_id, statement_id) pair
     appears once.
 
     Parameters
     ----------
-    votes_df : pd.DataFrame
+    votes : pd.DataFrame or list of dict
+        Data to deduplicate.
     keep : {"first", "last", False}
         Passed directly to pandas.drop_duplicates.
+
+    Returns
+    -------
+    votes_df_unique : pd.DataFrame
+    votes_df_duplicates : pd.DataFrame
     """
+    votes_df = pd.DataFrame(votes) if isinstance(votes, list) else votes.copy()
+
+    # Check required columns
+    required_cols = {"participant_id", "statement_id", "modified"}
+    if not required_cols.issubset(votes_df.columns):
+        missing = required_cols - set(votes_df.columns)
+        raise ValueError(f"Missing required columns: {missing}")
+
     sorted_df = votes_df.sort_values("modified", ascending=True)
 
-    deduped = sorted_df.drop_duplicates(
+    votes_df_unique = sorted_df.drop_duplicates(
         subset=["participant_id", "statement_id"],
-        keep=keep
+        keep=keep,
     )
 
-    skipped = sorted_df.loc[~sorted_df.index.isin(deduped.index)]
+    votes_df_duplicates = sorted_df.loc[~sorted_df.index.isin(votes_df_unique.index)]
 
-    return deduped, skipped
+    return votes_df_unique, votes_df_duplicates
 
 def filter_votes(
         votes: List[Dict],
