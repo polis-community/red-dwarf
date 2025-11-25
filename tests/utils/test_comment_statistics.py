@@ -58,7 +58,7 @@ def test_select_representative_statements_real_data(polis_convo_data):
         grouped_stats_df=grouped_stats_df,
         # Don't bother calculating this ourselves in test.
         mod_out_statement_ids=fixture.math_data["mod-out"],
-        pick_max=5,
+        pick_max:Optional[int]=5,
     )
 
     calculated_repness: PolisRepness = polis_repness

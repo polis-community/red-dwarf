@@ -66,8 +66,8 @@ def run_pipeline(
     max_group_count: int = 5,
     force_group_count: Optional[int] = None,
     random_state: Optional[int] = None,
-    pick_max: int = 5,
-    confidence: float = 0.9,
+    pick_max: Optional[int] = 5,
+    confidence: Optional[float] = 0.9,
 ) -> PolisClusteringResult:
     """
     An essentially feature-complete implementation of the Polis clustering algorithm.
