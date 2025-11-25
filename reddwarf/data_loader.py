@@ -650,7 +650,7 @@ class Loader:
 
     def filter_duplicate_votes(self, keep: KeepType = "last"):
         votes_df = pd.DataFrame(self.votes_data)
-        deduped, skipped = deduplicate_votes(votes_df=votes_df, keep=keep)
+        deduped, skipped = deduplicate_votes(votes=votes_df, keep=keep)
 
         self.skipped_dup_votes = skipped.to_dict(orient="records")
         self.votes_data = deduped.to_dict(orient="records")
