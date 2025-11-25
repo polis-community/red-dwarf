@@ -54,7 +54,7 @@ release: ## Print no-op documentation to guide the release process
 %:
 	@true
 
-.PHONY: help
+.PHONY: help venv install install-dev docs-build docs-serve test test-nb test-cov cov-report-html test-debug test-all clean clear-test-cache download release
 
 help:
 	@echo 'Usage: make <command>'
