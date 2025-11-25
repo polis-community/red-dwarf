@@ -37,6 +37,12 @@ test-debug: ## Run tests via pytest, optionally filtering (with verbose debuggin
 
 test-all: test test-nb docs-build ## Run unit and notebook tests
 
+benchmark: ## Run benchmarks
+	NO_BASELINE=true $(UV_RUN) scripts/benchmark_compare.sh
+
+benchmark-compare: ## Run benchmarks with comparison to main branch results
+	$(UV_RUN) scripts/benchmark_compare.sh
+
 # Small hint to remove gitignore'd python version file, which can confuse usage of uv.
 clean:
 	rm .python-version
@@ -54,7 +60,7 @@ release: ## Print no-op documentation to guide the release process
 %:
 	@true
 
-.PHONY: help venv install install-dev docs-build docs-serve test test-nb test-cov cov-report-html test-debug test-all clean clear-test-cache download release
+.PHONY: help venv install install-dev docs-build docs-serve test test-nb test-cov cov-report-html test-debug test-all clean clear-test-cache download release benchmark benchmark-compare
 
 help:
 	@echo 'Usage: make <command>'
