@@ -108,6 +108,15 @@ def filter_votes(
 
     raise ValueError(f"Invalid cutoff type: {type(cutoff)}. Must be int or float.")
 
+def _safe_numeric_sort(items):
+    """
+    Try to sort items numerically if possible; otherwise fall back to natural sort.
+    """
+    try:
+        return sorted(items, key=int)
+    except (ValueError, TypeError):
+        return sorted(items)
+
 def generate_raw_matrix(
         votes: List[Dict],
         cutoff: Optional[int] = None,
@@ -148,18 +157,10 @@ def generate_raw_matrix(
     # Ensure consistent column ordering regardless of statement_id type
     # Sort numerically if all columns can be converted to integers
     # If not all values can be converted to int, fall back to natural sorting
-    try:
-        sorted_columns = sorted(raw_matrix.columns, key=lambda x: int(x))
-    except (ValueError, TypeError):
-        sorted_columns = sorted(raw_matrix.columns)
-    raw_matrix = raw_matrix.reindex(columns=sorted_columns)
-
-    # Ensure consistent index
-    try:
-        sorted_index = sorted(raw_matrix.index, key=lambda x: int(x))
-    except (ValueError, TypeError):
-        sorted_index = sorted(raw_matrix.index)
-    raw_matrix = raw_matrix.reindex(index=sorted_index)
+    raw_matrix = raw_matrix.reindex(
+        index=_safe_numeric_sort(raw_matrix.index),
+        columns=_safe_numeric_sort(raw_matrix.columns),
+    )
 
     return raw_matrix
 
