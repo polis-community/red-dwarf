@@ -13,13 +13,12 @@ def deduplicate_votes(
     keep: KeepType = "last",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Deduplicate unsorted vote records so each (participant_id, statement_id) pair
-    appears once.
+    Deduplicate vote records, keeping the most recent by default.
 
     Parameters
     ----------
     votes : pd.DataFrame or list of dict
-        Data to deduplicate.
+        Data to deduplicate. Will be sorted by modified date.
     keep : {"first", "last", False}
         Passed directly to pandas.drop_duplicates.
 
