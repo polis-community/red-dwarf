@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.impute import SimpleImputer
-from typing import List, Dict, Optional, Literal, TypeAlias
+from typing import List, Dict, Optional, Literal, Tuple, TypeAlias
 from reddwarf.exceptions import RedDwarfError
 
 
@@ -9,7 +8,10 @@ VoteMatrix: TypeAlias = pd.DataFrame
 
 KeepType = Literal["first", "last", False]
 
-def deduplicate_votes(votes: pd.DataFrame | list, keep: KeepType = "last"):
+def deduplicate_votes(
+    votes: pd.DataFrame | list,
+    keep: KeepType = "last",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Deduplicate unsorted vote records so each (participant_id, statement_id) pair
     appears once.
