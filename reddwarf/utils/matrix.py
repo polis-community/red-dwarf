@@ -1,6 +1,7 @@
+import warnings
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Optional, Literal, Tuple, TypeAlias
+from typing import List, Dict, Optional, Literal, Tuple, TypeAlias, Union
 from reddwarf.exceptions import RedDwarfError
 
 
@@ -9,7 +10,7 @@ VoteMatrix: TypeAlias = pd.DataFrame
 KeepType = Literal["first", "last", False]
 
 def deduplicate_votes(
-    votes: pd.DataFrame | list,
+    votes: Union[pd.DataFrame, List[Dict]],
     keep: KeepType = "last",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -47,47 +48,70 @@ def deduplicate_votes(
     return votes_df_unique, votes_df_duplicates
 
 def filter_votes(
-        votes: List[Dict],
-        cutoff: Optional[int] = None,
-) -> List[Dict]:
+    votes: Union[pd.DataFrame, List[Dict]],
+    cutoff: Optional[Union[int, float]] = None,
+    time_col: str = "modified",
+    skip_timesorting: bool = False,
+) -> pd.DataFrame:
     """
-    Filters a list of votes.
+    Filter a list or DataFrame of vote records by percent, timestamp, or index.
 
-    If a `cutoff` is provided, votes are filtered based on either:
-
-    - An `int` representing unix timestamp (ms), keeping only votes before or at that time.
-        - Any int above 13_000_000_000 is considered a timestamp.
-    - Any other positive or negative `int` is considered an index, reflecting where to trim the time-sorted vote list.
-        - positive: filters in votes that many indices from start
-        - negative: filters out votes that many indices from end
+    Supports three types of cutoffs:
+    1. Percent: float between 0.0 and 1.0 representing fraction of earliest votes to keep.
+    2. Unix timestamp (ms): keeps only votes with `time_col` <= cutoff.
+    3. Index-based: integer position in time-sorted votes list.
+       - Positive: keep first `cutoff` votes
+       - Negative: remove last `abs(cutoff)` votes
 
     Args:
-        votes (List[Dict]): An unsorted list of vote records, where each record is a dictionary containing:
-
-            - "participant_id": The ID of the voter.
-            - "statement_id": The ID of the statement being voted on.
-            - "vote": The recorded vote value.
-            - "modified": A unix timestamp object representing when the vote was made.
-
-        cutoff (int): A cutoff unix timestamp (ms) or index position in date-sorted votes list.
+        votes: list of dicts or DataFrame of vote records. Must include `time_col`.
+        cutoff: cutoff value (percent, timestamp, index)
+        time_col: column name to use for timestamp cutoffs and sorting
+        skip_timesorting: if True, skip sorting by `time_col`
 
     Returns:
-        votes (List[Dict]): An list of vote records, sorted by `modified` if index-based filtering occurred.
-    """
-    if cutoff:
-        # TODO: Detect datetime object as arg instead.
-        try:
-            if cutoff > 1_300_000_000:
-                cutoff_timestamp = cutoff
-                votes = [v for v in votes if v['modified'] <= cutoff_timestamp]
-            else:
-                cutoff_index = cutoff
-                votes = sorted(votes, key=lambda x: x["modified"])
-                votes = votes[:cutoff_index]
-        except KeyError as e:
-            raise RedDwarfError("The `modified` key is missing from a vote object that must be sorted") from e
+        pd.DataFrame: Filtered votes, optionally sorted.
 
-    return votes
+    Raises:
+        ValueError: If input is invalid or `time_col` is missing.
+    """
+    import pandas as pd
+
+    # Convert list to DataFrame
+    if isinstance(votes, list):
+        votes_df = pd.DataFrame(votes)
+    elif isinstance(votes, pd.DataFrame):
+        votes_df = votes.copy()
+    else:
+        raise ValueError("`votes` must be a DataFrame or list of dictionaries.")
+
+    if time_col not in votes_df.columns:
+        raise ValueError(f"'{time_col}' column not found; cannot perform time-based filtering.")
+
+    # Sort by time_col unless skipped
+    if not skip_timesorting:
+        votes_df = votes_df.sort_values(time_col).reset_index(drop=True)
+
+    # No cutoff → return sorted DataFrame
+    if cutoff is None or cutoff == 1.0:
+        return votes_df
+
+    # Percent-based cutoff
+    if isinstance(cutoff, float):
+        if not (0.0 < cutoff < 1.0):
+            raise ValueError("Percent cutoff must be between 0.0 and 1.0.")
+        n_keep = max(1, int(len(votes_df) * cutoff))
+        return votes_df.iloc[:n_keep]
+
+    # Integer cutoff
+    if isinstance(cutoff, int):
+        # Timestamp cutoff detection (assume > 13_000_000_000 ms)
+        if cutoff > 1_300_000_000:
+            return votes_df.loc[votes_df[time_col] <= cutoff]
+        # Index-based cutoff
+        return votes_df.iloc[:cutoff] if cutoff >= 0 else votes_df.iloc[:cutoff]
+
+    raise ValueError(f"Invalid cutoff type: {type(cutoff)}. Must be int or float.")
 
 def generate_raw_matrix(
         votes: List[Dict],
@@ -117,11 +141,10 @@ def generate_raw_matrix(
 
             This includes even voters that have no votes, and statements on which no votes were placed.
     """
-    if cutoff:
-        votes = filter_votes(votes=votes, cutoff=cutoff)
+    # Will just convert into dataframe if no cutoff.
+    votes_df = filter_votes(votes=votes, cutoff=cutoff)
 
-    raw_matrix = pd.DataFrame.from_dict(votes)
-    raw_matrix = raw_matrix.pivot(
+    raw_matrix = votes_df.pivot(
         values="vote",
         index="participant_id",
         columns="statement_id",

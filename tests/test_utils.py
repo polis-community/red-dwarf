@@ -109,14 +109,14 @@ def make_vote_matrix():
 
 
 def test_generate_raw_matrix_simple_string_identifiers(make_votes, make_vote_matrix):
-    simple_votes = make_votes(id_type='str', include_timestamp=False)
+    simple_votes = make_votes(id_type='str', include_timestamp=True)
     simple_vote_matrix = make_vote_matrix(id_type='str')
     expected = simple_vote_matrix
     vote_matrix = utils.generate_raw_matrix(votes=simple_votes)
     assert_frame_equal(vote_matrix, expected)
 
 def test_generate_raw_matrix_simple_int_identifiers(make_votes, make_vote_matrix):
-    simple_votes = make_votes(id_type='int', include_timestamp=False)
+    simple_votes = make_votes(id_type='int', include_timestamp=True)
     simple_vote_matrix = make_vote_matrix(id_type='int')
 
     expected = simple_vote_matrix
@@ -174,7 +174,7 @@ def test_generate_raw_matrix_cutoff_from_timestamp_missing_error(make_votes):
     shuffle(shuffled_votes)
 
     last_vote_timestamp = 1735000000
-    with pytest.raises(RedDwarfError):
+    with pytest.raises(ValueError, match="modified"):
         utils.generate_raw_matrix(votes=shuffled_votes, cutoff=last_vote_timestamp)
 
 def test_generate_raw_matrix_cutoff_from_index_missing_error(make_votes):
@@ -182,7 +182,7 @@ def test_generate_raw_matrix_cutoff_from_index_missing_error(make_votes):
     shuffled_votes = simple_timestamped_votes.copy()
     shuffle(shuffled_votes)
 
-    with pytest.raises(RedDwarfError):
+    with pytest.raises(ValueError, match="modified"):
         utils.generate_raw_matrix(votes=shuffled_votes, cutoff=-4)
 
 def test_get_unvoted_statement_ids(make_vote_matrix):
@@ -268,3 +268,43 @@ def test_filter_matrix_mod_out_statement_with_zero(make_vote_matrix):
     assert statement_count(initial_matrix) == statement_count(filtered_matrix)
 
     assert (filtered_matrix[1] == 0).all()
+
+def test_filter_votes_skip_timesorting(make_votes):
+    """Test that skip_timesorting=True preserves original order."""
+    votes = make_votes(include_timestamp=True)
+    # shuffle to make order different from timestamps
+    shuffled_votes = votes.copy()
+    shuffle(shuffled_votes)
+
+    # Use skip_timesorting so order is not modified
+    filtered_votes = utils.filter_votes(
+        votes=shuffled_votes,
+        cutoff=4,  # index-based cutoff
+        skip_timesorting=True
+    )
+
+    # The filtered votes should match the first 4 of the shuffled list, preserving order
+    expected_votes = pd.DataFrame(shuffled_votes[:4])
+    assert_frame_equal(filtered_votes, expected_votes)
+
+def test_filter_votes_custom_time_col(make_votes):
+    """Test that a different time column name can be used."""
+    votes = make_votes(include_timestamp=True)
+    # Rename 'modified' -> 'timestamp'
+    votes_custom_col = [
+        {**v, 'timestamp': v.pop('modified')}
+        for v in votes
+    ]
+
+    # Use cutoff by timestamp using the custom column
+    cutoff_timestamp = 1735000000
+    filtered_votes = utils.filter_votes(
+        votes=votes_custom_col,
+        cutoff=cutoff_timestamp,
+        time_col='timestamp'
+    )
+
+    # All votes with timestamp <= cutoff_timestamp should be included
+    expected_votes = [v for v in votes_custom_col if v['timestamp'] <= cutoff_timestamp]
+    expected_df = pd.DataFrame(expected_votes)
+    assert_frame_equal(filtered_votes, expected_df)
