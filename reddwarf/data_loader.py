@@ -614,8 +614,8 @@ class Loader:
                     )
                 )
 
-        # When multiple votes (same tid and pid), keep only most recent (vs first).
-        self.filter_duplicate_votes(keep="last")
+        # When multiple votes (same tid and pid), keep only the most recent.
+        self.filter_duplicate_votes()
         # self.load_remote_export_data_summary()
         # self.load_remote_export_data_participant_votes()
         # self.load_remote_export_data_comment_groups()
@@ -648,9 +648,9 @@ class Loader:
             Vote(**vote).model_dump(mode="json") for vote in list(reader)
         ]
 
-    def filter_duplicate_votes(self, keep: KeepType = "last"):
+    def filter_duplicate_votes(self):
         votes_df = pd.DataFrame(self.votes_data)
-        deduped, skipped = deduplicate_votes(votes=votes_df, keep=keep)
+        deduped, skipped = deduplicate_votes(votes=votes_df)
 
         self.skipped_dup_votes = skipped.to_dict(orient="records")
         self.votes_data = deduped.to_dict(orient="records")

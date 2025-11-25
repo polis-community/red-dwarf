@@ -11,17 +11,14 @@ KeepType = Literal["first", "last", False]
 
 def deduplicate_votes(
     votes: Union[pd.DataFrame, List[Dict]],
-    keep: KeepType = "last",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Deduplicate vote records, keeping the most recent by default.
+    Deduplicate vote records, keeping the most recent.
 
     Parameters
     ----------
     votes : pd.DataFrame or list of dict
         Data to deduplicate. Will be sorted by modified date.
-    keep : {"first", "last", False}
-        Passed directly to pandas.drop_duplicates.
 
     Returns
     -------
@@ -40,7 +37,7 @@ def deduplicate_votes(
 
     votes_df_unique = sorted_df.drop_duplicates(
         subset=["participant_id", "statement_id"],
-        keep=keep,
+        keep="last",
     )
 
     votes_df_duplicates = sorted_df.loc[~sorted_df.index.isin(votes_df_unique.index)]
@@ -75,8 +72,6 @@ def filter_votes(
     Raises:
         ValueError: If input is invalid or `time_col` is missing.
     """
-    import pandas as pd
-
     # Convert list to DataFrame
     if isinstance(votes, list):
         votes_df = pd.DataFrame(votes)
