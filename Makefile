@@ -18,22 +18,22 @@ docs-serve: ## Serve the documentation dev site
 	$(UV_RUN) mkdocs serve
 
 test: ## Run tests via pytest, optionally filtering (Ex.: `make test TEST_FILTER=map-xids`)
-	$(UV_RUN) pytest -p no:nbmake -k '$(TEST_FILTER)'
+	$(UV_RUN) pytest --benchmark-skip -p no:nbmake -k '$(TEST_FILTER)'
 
 test-nb: install ## Test all notebooks, optionally specifying file (Ex: `make test-nb NB_FILTER=map-xids`)
-	$(UV_RUN) pytest -p no:cov --nbmake docs/notebooks/*$(NB_FILTER)*.ipynb
+	$(UV_RUN) pytest --benchmark-skip -p no:cov --benchmark-skip --nbmake docs/notebooks/*$(NB_FILTER)*.ipynb
 
 test-cov: ## Run tests via pytest (with coverage report)
-	$(UV_RUN) pytest --cov=reddwarf --cov-report term-missing:skip-covered
+	$(UV_RUN) pytest --benchmark-skip --cov=reddwarf --cov-report term-missing:skip-covered
 
 cov-report-html: ## Build and open html coverage report
-	$(UV_RUN) pytest --cov=reddwarf --cov-report html
+	$(UV_RUN) pytest --benchmark-skip --cov=reddwarf --cov-report html
 	open htmlcov/index.html
 
 test-debug: ## Run tests via pytest, optionally filtering (with verbose debugging)
 	# Make sure stdout is rendered to screen.
 	# Show full diffs on failure.
-	$(UV_RUN) pytest -p no:nbmake --capture=no -vv -k '$(TEST_FILTER)'
+	$(UV_RUN) pytest --benchmark-skip -p no:nbmake --capture=no -vv -k '$(TEST_FILTER)'
 
 test-all: test test-nb docs-build ## Run unit and notebook tests
 
