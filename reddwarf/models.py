@@ -28,7 +28,7 @@ class Vote(BaseModel):
         validation_alias=AliasChoices('statement_id', 'tid', 'comment-id'),
     )
     vote: VoteEnum
-    weight_x_32767: Optional[Literal[0]] = None
+    weight_x_32767: Optional[int] = None
     modified: datetime = Field(
         validation_alias=AliasChoices('modified', 'timestamp'),
         serialization_alias="modified",
