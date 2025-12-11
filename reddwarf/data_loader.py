@@ -119,6 +119,19 @@ class Loader:
         )
         exporter.export(output_dir, format=format)
 
+    # Deprecated
+    def dump_data(self, output_dir):
+        """
+        Export loaded data to JSON files in the specified directory.
+
+        Args:
+            output_dir (str): Directory path where JSON files will be written.
+
+        Note:
+            This method is deprecated. Use export_data() instead.
+        """
+        self.export_data(output_dir, format="json")
+
     def populate_polis_ids(self):
         """
         Normalize and populate Polis ID fields from the provided identifiers.
