@@ -537,8 +537,6 @@ class Loader:
             )
         else:
             self.session = LimiterSession(per_second=5)
-        adapter = CloudflareBypassHTTPAdapter()
-        self.session.mount(self.polis_instance_url, adapter)
         self.session.headers = {
             "User-Agent": ua.random,
         }
