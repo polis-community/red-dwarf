@@ -7,7 +7,7 @@ from requests_ratelimiter import SQLiteBucket, LimiterSession
 import csv
 from io import StringIO
 from reddwarf.models import Vote, Statement
-from reddwarf.helpers import CachedLimiterSession, CloudflareBypassHTTPAdapter
+from reddwarf.helpers import CachedLimiterSession
 
 ua = UserAgent()
 
@@ -537,8 +537,6 @@ class Loader:
             )
         else:
             self.session = LimiterSession(per_second=5)
-        adapter = CloudflareBypassHTTPAdapter()
-        self.session.mount(self.polis_instance_url, adapter)
         self.session.headers = {
             "User-Agent": ua.random,
         }
