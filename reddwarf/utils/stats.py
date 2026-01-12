@@ -540,8 +540,8 @@ def priority_metric(
 def select_representative_statements(
     grouped_stats_df: pd.DataFrame,
     mod_out_statement_ids: list[int] = [],
-    pick_max: int = 5,
-    confidence: float = 0.90,
+    pick_max: Optional[int] = 5,
+    confidence: Optional[float] = 0.90,
 ) -> PolisRepness:
     """
     Selects statistically representative statements from each group cluster.

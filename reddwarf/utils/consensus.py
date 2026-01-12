@@ -36,9 +36,9 @@ class ConsensusResult(TypedDict):
 def select_consensus_statements(
     vote_matrix: VoteMatrix,
     mod_out_statement_ids: list[int] = [],
-    pick_max=5,
-    prob_threshold: float = 0.5,
-    confidence: float = 0.9,
+    pick_max: Optional[int] =5,
+    prob_threshold: Optional[float] = 0.5,
+    confidence: Optional[float] = 0.9,
 ) -> ConsensusResult:
     """
     Select consensus statements from a given vote matrix.
