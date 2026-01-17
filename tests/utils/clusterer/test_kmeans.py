@@ -1,11 +1,11 @@
 import pytest
-from reddwarf.utils.clusterer.kmeans import run_kmeans, find_best_kmeans
+from reddwarf.sklearn.cluster import BestPolisKMeans, PolisKMeans
 from tests.fixtures import polis_convo_data
 from tests.helpers import transform_base_clusters_to_participant_coords
 import pandas as pd
 
 @pytest.mark.parametrize("polis_convo_data", ["small"], indirect=True)
-def test_run_kmeans_real_data_reproducible(polis_convo_data):
+def test_polis_kmeans_real_data_reproducible(polis_convo_data):
     fixture = polis_convo_data
 
     expected_cluster_centers = [group["center"] for group in fixture.math_data["group-clusters"]]
@@ -21,11 +21,11 @@ def test_run_kmeans_real_data_reproducible(polis_convo_data):
         for item in projected_participants
     ]).set_index("participant_id")
 
-    calculated_kmeans = run_kmeans(
-        dataframe=projected_participants_df,
-        init_centers=expected_cluster_centers,
+    calculated_kmeans = PolisKMeans(
         n_clusters=cluster_count,
-    )
+        init="k-means++",
+        init_centers=expected_cluster_centers,
+    ).fit(projected_participants_df)
 
     # Ensure same number of clusters
     assert len(calculated_kmeans.cluster_centers_) == len(expected_cluster_centers)
@@ -37,7 +37,7 @@ def test_run_kmeans_real_data_reproducible(polis_convo_data):
 # NOTE: "small-no-meta" fixture doesn't work because wants to find 4 clusters, whereas real data from polismath says 3.
 # This is likely due to k-smoothing holding back the k value at 3 in polismath, and we're finding the real current one.
 @pytest.mark.parametrize("polis_convo_data", ["small-with-meta"], indirect=True)
-def test_find_best_kmeans_real_data(polis_convo_data):
+def test_best_polis_kmeans_real_data(polis_convo_data):
     fixture = polis_convo_data
     MAX_GROUP_COUNT = 5
 
@@ -54,15 +54,24 @@ def test_find_best_kmeans_real_data(polis_convo_data):
         for item in projected_participants
     ]).set_index("participant_id")
 
-    results = find_best_kmeans(
-        X_to_cluster=projected_participants_df,
+    from reddwarf.utils.clusterer.base import run_clusterer
+
+    # Test using run_clusterer (which is what the pipeline actually uses)
+    clusterer_result = run_clusterer(
+        clusterer="kmeans",
+        X_participants_clusterable=projected_participants_df.values,
         k_bounds=[2, MAX_GROUP_COUNT],
-        # Pad center guesses to have enough values for testing up to max k groups.
         init_centers=expected_centers
     )
-    _, _, optimal_kmeans = results # for documentation
 
-    calculated_centers = optimal_kmeans.cluster_centers_.tolist() if optimal_kmeans else []
+    cluster_centers = getattr(clusterer_result, 'cluster_centers_', None)
+    calculated_centers = cluster_centers.tolist() if cluster_centers is not None else []
+
+    # Verify init_centers_used_ attribute is available (this was the original bug)
+    assert hasattr(clusterer_result, 'init_centers_used_')
+    init_centers_used = getattr(clusterer_result, 'init_centers_used_', None)
+    assert init_centers_used is not None
+    assert init_centers_used.shape[0] == len(calculated_centers)
 
     assert len(expected_centers) == len(calculated_centers)
     for i, _ in enumerate(expected_centers):
