@@ -275,4 +275,4 @@ class BestPolisKMeans(BaseEstimator):
     def fit_predict(self, X: NDArray, y=None, **kwargs) -> Optional[np.ndarray]:
         """Fit the clusterer and return cluster labels."""
         self.fit(X)
-        return self.labels_
+        return self.best_estimator_.labels_ if self.best_estimator_ is not None else None
