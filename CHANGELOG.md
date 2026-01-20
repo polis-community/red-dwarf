@@ -54,7 +54,7 @@ _No changes yet._
 - Update the release process instructions.
 - Added `simulate_api_response()` test helper for easier comparison with polismath output.
 - Bumped minimum supported Python version from 3.8 to 3.10. ([`#94`](https://github.com/polis-community/red-dwarf/pull/94))
-- Added CI testing for all of Python 3.10, 3.13, 3.14. ([`#93`](https://github.com/polis-community/red-dwarf/pull/93))
+- Added CI testing for all of Python 3.10, 3.13. ([`#93`](https://github.com/polis-community/red-dwarf/pull/93))
 - Enforced a build of website and notebooks in pull requests. ([`#96`](https://github.com/polis-community/red-dwarf/pull/96))
 - Added support for test fixtures that pull data from live polis convos. ([`#98`](https://github.com/polis-community/red-dwarf/pull/98))
 - Added data loader to docs website. ([`#101`](https://github.com/polis-community/red-dwarf/pull/101))
@@ -62,6 +62,8 @@ _No changes yet._
 - Resolved deprecated method in HDBSCAN. ([`#109`](https://github.com/polis-community/red-dwarf/pull/109))
 - Removed CloudflareBypassHTTPAdapter that is no longer necessary. ([`#108`](https://github.com/polis-community/red-dwarf/pull/108))
 - Extracted `Exporter` class out of data_loader into data_exporter. ([`#100`](https://github.com/polis-community/red-dwarf/pull/110))
+- Updated HDBSCAN to allow using scikit-learn >=1.8. ([`#112`](https://github.com/polis-community/red-dwarf/issues/112))
+- Set minimum for version for PaCMAP's Numba. Added back CI testing for Python 3.14. ([`#112`](https://github.com/polis-community/red-dwarf/pull/114))
 
 
 ## [0.3.0][] (2025-04-29)

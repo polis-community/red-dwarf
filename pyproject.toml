@@ -34,6 +34,9 @@ requests-cache = { git = "https://github.com/requests-cache/requests-cache", rev
 [project.optional-dependencies]
 alt-algos = [
     "pacmap>=0.7.0",
+    # Numba (required by pacmap) needs this version to support Python v3.14
+    # See: https://github.com/numba/numba/issues/9957#issuecomment-3632768391
+    "numba>=0.63.0",
     # Lowest we can be with sklearn 1.8
     # See: https://github.com/scikit-learn-contrib/hdbscan/pull/673
     "hdbscan>=0.8.41",
