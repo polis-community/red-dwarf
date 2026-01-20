@@ -51,8 +51,8 @@ release: ## Print no-op documentation to guide the release process
 	$(UV_RUN) scripts/release.py
 
 build: ## Build a wheel for upload to PyPI
-	rm -r dist/
-	$(UV_RUN) build
+	rm -rf dist/
+	uv build
 
 # These make tasks allow the default help text to work properly.
 %:
