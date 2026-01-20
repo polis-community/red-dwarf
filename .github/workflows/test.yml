@@ -25,7 +25,8 @@ jobs:
         python-version:
           - "3.10"
           - "3.13"
-          - "3.14"
+          # TODO: Figure out pydantic bug with created/modified fields.
+          # - "3.14"
     steps:
       - uses: actions/checkout@v4
 

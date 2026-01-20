@@ -63,7 +63,6 @@ _No changes yet._
 - Removed CloudflareBypassHTTPAdapter that is no longer necessary. ([#108](https://github.com/polis-community/red-dwarf/pull/108))
 - Extracted `Exporter` class out of data_loader into data_exporter. ([#100](https://github.com/polis-community/red-dwarf/pull/110))
 - Updated HDBSCAN to allow using scikit-learn >=1.8. ([#112](https://github.com/polis-community/red-dwarf/issues/112))
-- Set minimum for version for PaCMAP's Numba. Added back CI testing for Python 3.14. ([#112](https://github.com/polis-community/red-dwarf/pull/114))
 - Keep running CI even when one version of Python fails. ([#112](https://github.com/polis-community/red-dwarf/pull/114))
 
 
