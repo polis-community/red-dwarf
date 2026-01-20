@@ -10,6 +10,8 @@ jobs:
   install-test:
     runs-on: ubuntu-latest
     strategy:
+       # Keep running even when one fails.
+      fail-fast: false
       matrix:
         install-method:
           - "."

@@ -17,6 +17,8 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     strategy:
+       # Keep running even when one fails.
+      fail-fast: false
       matrix:
         # See: https://devguide.python.org/versions/
         # See: https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json

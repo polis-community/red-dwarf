@@ -64,6 +64,7 @@ _No changes yet._
 - Extracted `Exporter` class out of data_loader into data_exporter. ([#100](https://github.com/polis-community/red-dwarf/pull/110))
 - Updated HDBSCAN to allow using scikit-learn >=1.8. ([#112](https://github.com/polis-community/red-dwarf/issues/112))
 - Set minimum for version for PaCMAP's Numba. Added back CI testing for Python 3.14. ([#112](https://github.com/polis-community/red-dwarf/pull/114))
+- Keep running CI even when one version of Python fails. ([#112](https://github.com/polis-community/red-dwarf/pull/114))
 
 
 ## [0.3.0][] (2025-04-29)
