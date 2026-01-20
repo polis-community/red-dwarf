@@ -22,7 +22,6 @@ class Vote(BaseModel):
 
     participant_id: IncrementingId = Field(
         validation_alias=AliasChoices('participant_id', 'pid', 'voter-id'),
-        serialization_alias="participant_id",
     )
     statement_id: IncrementingId = Field(
         validation_alias=AliasChoices('statement_id', 'tid', 'comment-id'),
@@ -31,7 +30,6 @@ class Vote(BaseModel):
     weight_x_32767: Optional[int] = None
     modified: datetime = Field(
         validation_alias=AliasChoices('modified', 'timestamp'),
-        serialization_alias="modified",
     )
     conversation_id: Optional[str] = None
     datetime: Optional[Annotated[str, Field(exclude=True)]] = None
