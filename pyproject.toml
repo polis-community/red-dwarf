@@ -1,6 +1,6 @@
 [project]
 name = "red-dwarf"
-version = "0.3.0"
+version = "0.4.0"
 description = "A DIMensional REDuction library for reproducing and experimenting with Polis-like data pipelines."
 readme = "README.md"
 requires-python = ">=3.10"
