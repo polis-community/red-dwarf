@@ -62,7 +62,3 @@ Tests use real Polis API data fixtures in `tests/fixtures/`. The test suite incl
 - `plots`: matplotlib, seaborn, concave-hull (visualization)
 - `dev`: pytest, mkdocs, nbmake (development)
 - `all`: everything
-
-## Git Conventions
-
-- When working on a branch that references an issue (e.g., `116-fix-bestkmeans`), include `Closes #116` in the commit message or PR description to auto-close the issue when merged

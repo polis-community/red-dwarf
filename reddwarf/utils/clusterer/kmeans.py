@@ -2,7 +2,7 @@ from numpy.typing import NDArray
 import pandas as pd
 import numpy as np
 from reddwarf.sklearn.model_selection import GridSearchNonCV
-from reddwarf.sklearn.cluster import InitStrategy, PolisKMeans
+from reddwarf.sklearn.cluster import PolisKMeans
 from sklearn.metrics import silhouette_score
 from typing import List, Optional
 
@@ -33,7 +33,7 @@ def to_range(r: RangeLike) -> range:
 def run_kmeans(
         dataframe: pd.DataFrame,
         n_clusters: int = 2,
-        init: InitStrategy = "k-means++",
+        init="k-means++",
         # TODO: Improve this type. 3d?
         init_centers: Optional[List] = None,
         random_state: Optional[int] = None,
@@ -66,7 +66,7 @@ def run_kmeans(
 def find_best_kmeans(
         X_to_cluster: NDArray,
         k_bounds: RangeLike = [2, 5],
-        init: InitStrategy = "k-means++",
+        init="k-means++",
         init_centers: Optional[List] = None,
         random_state: Optional[int] = None,
 ) -> tuple[int, float, PolisKMeans | None]:
