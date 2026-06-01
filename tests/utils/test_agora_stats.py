@@ -4,8 +4,11 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from reddwarf.utils.stats import (
+    agora_label_candidate_mask,
+    choose_agora_thresholded_winners,
     benjamini_hochberg,
     calculate_comment_statistics_dataframes,
+    classify_signal_strength,
     rank_representative_statements,
     z_to_pvalue,
 )
@@ -91,57 +94,74 @@ def test_benjamini_hochberg_adapts_to_size():
 # --- rank_representative_statements ---
 
 
-def _make_grouped_stats_df():
-    """Create a synthetic grouped_stats_df for testing rank functions."""
-    # 2 groups, 3 statements
-    data = []
-    # Group 0: statement 0 strongly agree-rep, statement 1 weakly, statement 2 disagree-rep
-    data.append({
-        "group_id": 0, "statement_id": 0,
-        "na": 8, "nd": 1, "ns": 10,
-        "pa": 0.75, "pd": 0.15, "pat": 3.0, "pdt": -1.5,
-        "ra": 1.8, "rd": 0.3, "rat": 4.0, "rdt": -2.0,
-    })
-    data.append({
-        "group_id": 0, "statement_id": 1,
-        "na": 5, "nd": 3, "ns": 10,
-        "pa": 0.55, "pd": 0.35, "pat": 0.5, "pdt": -0.2,
-        "ra": 1.1, "rd": 0.9, "rat": 0.3, "rdt": -0.1,
-    })
-    data.append({
-        "group_id": 0, "statement_id": 2,
-        "na": 1, "nd": 8, "ns": 10,
-        "pa": 0.15, "pd": 0.75, "pat": -1.5, "pdt": 3.0,
-        "ra": 0.3, "rd": 1.8, "rat": -2.0, "rdt": 4.0,
-    })
-    # Group 1: similar but different
-    data.append({
-        "group_id": 1, "statement_id": 0,
-        "na": 3, "nd": 6, "ns": 10,
-        "pa": 0.35, "pd": 0.65, "pat": -0.5, "pdt": 1.5,
-        "ra": 0.7, "rd": 1.3, "rat": -1.0, "rdt": 2.0,
-    })
-    data.append({
-        "group_id": 1, "statement_id": 1,
-        "na": 6, "nd": 2, "ns": 10,
-        "pa": 0.65, "pd": 0.25, "pat": 1.5, "pdt": -0.5,
-        "ra": 1.3, "rd": 0.7, "rat": 2.0, "rdt": -1.0,
-    })
-    data.append({
-        "group_id": 1, "statement_id": 2,
-        "na": 4, "nd": 4, "ns": 10,
-        "pa": 0.45, "pd": 0.45, "pat": 0.0, "pdt": 0.0,
-        "ra": 1.0, "rd": 1.0, "rat": 0.0, "rdt": 0.0,
-    })
+def _make_three_statement_vote_matrix():
+    vote_matrix = pd.DataFrame(
+        {
+            0: [1, 1, 1, 1, 1, 1, 1, 1, -1, -1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            1: [-1, -1, -1, -1, -1, -1, -1, -1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            2: [1, 1, -1, -1, -1, -1, 0, 0, np.nan, np.nan,
+                -1, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+        },
+        index=list(range(20)),
+    )
+    cluster_labels = [0] * 10 + [1] * 10
+    return vote_matrix, cluster_labels
 
-    df = pd.DataFrame(data).set_index(["group_id", "statement_id"])
-    return df
+
+def _make_two_group_single_statement_vote_matrix(group0_votes, group1_votes):
+    vote_matrix = pd.DataFrame(
+        {0: list(group0_votes) + list(group1_votes)},
+        index=list(range(len(group0_votes) + len(group1_votes))),
+    )
+    cluster_labels = [0] * len(group0_votes) + [1] * len(group1_votes)
+    return vote_matrix, cluster_labels
+
+
+def _rank_vote_matrix(vote_matrix, cluster_labels, mod_out_statement_ids=None):
+    grouped_stats_df, _ = calculate_comment_statistics_dataframes(
+        vote_matrix=vote_matrix,
+        cluster_labels=cluster_labels,
+    )
+    return rank_representative_statements(
+        grouped_stats_df=grouped_stats_df,
+        vote_matrix=vote_matrix,
+        cluster_labels=cluster_labels,
+        mod_out_statement_ids=mod_out_statement_ids or [],
+        fdr_rate=0.10,
+        divisive_n_resamples=99,
+        divisive_random_state=7,
+    )
+
+
+def test_rank_representative_statements_requires_cluster_context():
+    with pytest.raises(ValueError):
+        rank_representative_statements(pd.DataFrame())
+
+
+def test_rank_representative_statements_requires_at_least_two_groups():
+    vote_matrix = pd.DataFrame({0: [1, -1, 1]}, index=[0, 1, 2])
+    cluster_labels = [0, 0, 0]
+    grouped_stats_df, _ = calculate_comment_statistics_dataframes(
+        vote_matrix=vote_matrix,
+        cluster_labels=cluster_labels,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Agora representative ranking requires at least 2 distinct groups",
+    ):
+        rank_representative_statements(
+            grouped_stats_df=grouped_stats_df,
+            vote_matrix=vote_matrix,
+            cluster_labels=cluster_labels,
+        )
 
 
 def test_rank_representative_statements_all_present():
-    df = _make_grouped_stats_df()
-    result = rank_representative_statements(df)
-    # 2 groups, 3 statements each
+    vote_matrix, cluster_labels = _make_three_statement_vote_matrix()
+    result = _rank_vote_matrix(vote_matrix, cluster_labels)
     assert set(result.keys()) == {0, 1}
     for gid in [0, 1]:
         statement_ids = {s.statement_id for s in result[gid]}
@@ -149,83 +169,156 @@ def test_rank_representative_statements_all_present():
 
 
 def test_rank_representative_statements_ranking_order():
-    df = _make_grouped_stats_df()
-    result = rank_representative_statements(df)
+    vote_matrix, cluster_labels = _make_three_statement_vote_matrix()
+    result = _rank_vote_matrix(vote_matrix, cluster_labels)
     for gid in result:
         statements = result[gid]
-        # Should be sorted by effect_size descending
         effect_sizes = [s.effect_size for s in statements]
         assert effect_sizes == sorted(effect_sizes, reverse=True)
-        # Rank 1 should have highest effect size
         assert statements[0].rank == 1
 
 
-def test_rank_representative_statements_direction_selection():
-    df = _make_grouped_stats_df()
-    result = rank_representative_statements(df)
-    # Group 0, statement 0: strong agree (rat=4.0, pat=3.0 vs rdt=-2.0, pdt=-1.5)
-    stmt_0_g0 = [s for s in result[0] if s.statement_id == 0][0]
-    assert stmt_0_g0.repful_for == "agree"
-    # Group 0, statement 2: strong disagree (rdt=4.0, pdt=3.0 vs rat=-2.0, pat=-1.5)
-    stmt_2_g0 = [s for s in result[0] if s.statement_id == 2][0]
-    assert stmt_2_g0.repful_for == "disagree"
+def test_rank_representative_statements_single_eligible_label_wins():
+    result = _rank_vote_matrix(*_make_two_group_single_statement_vote_matrix(
+        [1, 1, 1, 1, 1, 1, 1, 1, -1, -1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    ))
+    stmt = [s for s in result[0] if s.statement_id == 0][0]
+    assert stmt.repful_for == "agree"
 
 
-def test_rank_representative_statements_effect_size():
-    df = _make_grouped_stats_df()
-    result = rank_representative_statements(df)
-    # Group 0, statement 0: agree direction, effect_size = ra * pa = 1.8 * 0.75
-    stmt_0_g0 = [s for s in result[0] if s.statement_id == 0][0]
-    assert stmt_0_g0.effect_size == pytest.approx(1.8 * 0.75)
-    # Group 0, statement 2: disagree direction, effect_size = rd * pd = 1.8 * 0.75
-    stmt_2_g0 = [s for s in result[0] if s.statement_id == 2][0]
-    assert stmt_2_g0.effect_size == pytest.approx(1.8 * 0.75)
+def test_rank_representative_statements_multiple_eligible_labels_use_highest_effect():
+    result = _rank_vote_matrix(*_make_two_group_single_statement_vote_matrix(
+        [1, 1, -1, -1, -1, -1, 0, 0, np.nan, np.nan],
+        [-1, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+    ))
+    stmt = [s for s in result[0] if s.statement_id == 0][0]
+    assert stmt.repful_for == "divisive"
 
 
-def test_rank_representative_statements_mod_out():
-    df = _make_grouped_stats_df()
-    result = rank_representative_statements(df, mod_out_statement_ids=[1])
-    for gid in result:
-        statement_ids = {s.statement_id for s in result[gid]}
-        assert 1 not in statement_ids
-        assert len(statement_ids) == 2
+def test_rank_representative_statements_no_eligible_labels_fall_back_to_strongest_local_direction():
+    result = _rank_vote_matrix(*_make_two_group_single_statement_vote_matrix(
+        [1, 1, 1, -1, 0, 0, 0, 0, np.nan, np.nan],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    ))
+    stmt = [s for s in result[0] if s.statement_id == 0][0]
+    assert stmt.repful_for == "agree"
+
+
+def test_rank_representative_statements_one_by_one_divisive_is_blocked():
+    result = _rank_vote_matrix(*_make_two_group_single_statement_vote_matrix(
+        [1, -1, 0, 0, np.nan, np.nan],
+        [1, 1, 1, 1, 1, 1],
+    ))
+    stmt = [s for s in result[0] if s.statement_id == 0][0]
+    assert stmt.repful_for != "divisive"
+
+
+def test_rank_representative_statements_ties_break_by_lower_p_value_then_label_order():
+    winners = choose_agora_thresholded_winners(
+        label_effects=[[1.0, 1.0, 0.5], [0.4, 0.4, 0.1], [0.0, 0.0, 0.0]],
+        label_p_values=[[0.2, 0.1, 0.9], [0.2, 0.1, 1.0], [0.1, 0.1, 1.0]],
+        candidate_mask=[[True, True, False], [False, False, False], [False, False, False]],
+        fallback_local_scores=[[0.0, 0.0, 0.0], [0.3, 0.3, -np.inf], [0.3, 0.3, -np.inf]],
+    )
+    assert_array_equal(winners, np.array([1, 1, 0]))
+
+
+def test_rank_representative_statements_candidate_mask_blocks_ultrathin_divisive():
+    mask = agora_label_candidate_mask(
+        n_agree=[1],
+        n_disagree=[1],
+        n_seen=[2],
+    )[0]
+    assert_array_equal(mask, np.array([True, True, False]))
 
 
 def test_rank_representative_statements_zero_vote_filter():
     """Zero-vote statements should not inflate BH hypothesis count."""
-    df = _make_grouped_stats_df()
-    # Add a zero-vote statement (na=0, nd=0) to each group
-    zero_vote_data = [
-        {
-            "group_id": 0, "statement_id": 99,
-            "na": 0, "nd": 0, "ns": 10,
-            "pa": 0.50, "pd": 0.50, "pat": 0.0, "pdt": 0.0,
-            "ra": 1.0, "rd": 1.0, "rat": 0.0, "rdt": 0.0,
-        },
-        {
-            "group_id": 1, "statement_id": 99,
-            "na": 0, "nd": 0, "ns": 10,
-            "pa": 0.50, "pd": 0.50, "pat": 0.0, "pdt": 0.0,
-            "ra": 1.0, "rd": 1.0, "rat": 0.0, "rdt": 0.0,
-        },
-    ]
-    df_with_zero = pd.concat([
-        df, pd.DataFrame(zero_vote_data).set_index(["group_id", "statement_id"])
-    ])
+    vote_matrix, cluster_labels = _make_three_statement_vote_matrix()
+    vote_matrix_with_zero = vote_matrix.copy()
+    vote_matrix_with_zero[99] = np.nan
 
-    result_with = rank_representative_statements(df_with_zero)
-    result_without = rank_representative_statements(df)
+    result_with = _rank_vote_matrix(vote_matrix_with_zero, cluster_labels)
+    result_without = _rank_vote_matrix(vote_matrix, cluster_labels)
 
     for gid in result_with:
-        # Zero-vote statement should be present but never selected
         zero_stmt = [s for s in result_with[gid] if s.statement_id == 99][0]
         assert zero_stmt.selected is False
         assert zero_stmt.adjusted_p_value == 1.0
-
-        # Selection of other statements should be identical (zero-vote doesn't inflate m)
         sel_with = {s.statement_id for s in result_with[gid] if s.selected and s.statement_id != 99}
         sel_without = {s.statement_id for s in result_without[gid] if s.selected}
         assert sel_with == sel_without
+
+
+def test_classify_signal_strength_small_group_requires_full_participation():
+    assert classify_signal_strength(
+        selected=True,
+        effect_size=2.0,
+        p_value=0.01,
+        n_seen=4,
+        group_size=4,
+        strong_effect_min=1.0,
+        strong_small_group_cutoff=5,
+        strong_large_group_participation_min=0.8,
+        strong_p_max=0.05,
+    ) == "strong"
+
+
+def test_classify_signal_strength_small_group_partial_participation_is_normal():
+    assert classify_signal_strength(
+        selected=True,
+        effect_size=2.0,
+        p_value=0.01,
+        n_seen=3,
+        group_size=4,
+        strong_effect_min=1.0,
+        strong_small_group_cutoff=5,
+        strong_large_group_participation_min=0.8,
+        strong_p_max=0.05,
+    ) == "normal"
+
+
+def test_classify_signal_strength_group_of_five_uses_eighty_percent_rule():
+    assert classify_signal_strength(
+        selected=True,
+        effect_size=2.0,
+        p_value=0.01,
+        n_seen=4,
+        group_size=5,
+        strong_effect_min=1.0,
+        strong_small_group_cutoff=5,
+        strong_large_group_participation_min=0.8,
+        strong_p_max=0.05,
+    ) == "strong"
+
+
+def test_classify_signal_strength_large_group_low_participation_is_normal():
+    assert classify_signal_strength(
+        selected=True,
+        effect_size=2.0,
+        p_value=0.01,
+        n_seen=5,
+        group_size=50,
+        strong_effect_min=1.0,
+        strong_small_group_cutoff=5,
+        strong_large_group_participation_min=0.8,
+        strong_p_max=0.05,
+    ) == "normal"
+
+
+def test_classify_signal_strength_non_positive_group_size_is_normal():
+    assert classify_signal_strength(
+        selected=True,
+        effect_size=2.0,
+        p_value=0.01,
+        n_seen=4,
+        group_size=0,
+        strong_effect_min=1.0,
+        strong_small_group_cutoff=5,
+        strong_large_group_participation_min=0.8,
+        strong_p_max=0.05,
+    ) == "normal"
 
 
 # --- rank_consensus_statements ---

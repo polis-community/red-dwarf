@@ -5,10 +5,16 @@ from typing import Literal
 @dataclass
 class RankedRepnessStatement:
     statement_id: int
-    repful_for: Literal["agree", "disagree"]
+    repful_for: Literal["agree", "disagree", "divisive"]
+    signal_strength: Literal["normal", "strong"]
     na: int
     nd: int
     ns: int
+    group_size: int
+    out_group_size: int
+    na_out: int
+    nd_out: int
+    ns_out: int
     pa: float
     pd: float
     pat: float
@@ -17,7 +23,14 @@ class RankedRepnessStatement:
     rd: float
     rat: float
     rdt: float
-    effect_size: float  # ra*pa or rd*pd depending on direction
+    divisiveness: float
+    agree_effect: float
+    disagree_effect: float
+    divisive_effect: float
+    agree_p_value: float
+    disagree_p_value: float
+    divisive_p_value: float
+    effect_size: float  # winning thresholded ranking score
     p_value: float  # combined p-value (before BH)
     adjusted_p_value: float  # after BH
     selected: bool  # passes BH cutoff

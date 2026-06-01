@@ -79,6 +79,12 @@ def compute_effective_agreement_gac(
 
 def run_pipeline(
     fdr_rate: float = 0.10,
+    divisive_n_resamples: int = 999,
+    divisive_random_state: Optional[int] = None,
+    strong_effect_min: float = 1.0,
+    strong_small_group_cutoff: Optional[int] = 5,
+    strong_large_group_participation_min: Optional[float] = 0.8,
+    strong_p_max: Optional[float] = 0.05,
     **kwargs,
 ) -> AgoraClusteringResult:
     """
@@ -89,6 +95,12 @@ def run_pipeline(
 
     Args:
         fdr_rate (float): False discovery rate for Benjamini-Hochberg selection.
+        divisive_n_resamples (int): Number of permutation resamples for divisive p-values.
+        divisive_random_state (Optional[int]): RNG seed for divisive permutation tests.
+        strong_effect_min (float): Minimum effect size for a selected statement to be labeled strong.
+        strong_small_group_cutoff (Optional[int]): Groups smaller than this require full participation for a statement to be labeled strong.
+        strong_large_group_participation_min (Optional[float]): Participation rate required for groups at or above the small-group cutoff.
+        strong_p_max (Optional[float]): Maximum p-value for strong labeling.
         **kwargs: All arguments forwarded to base.run_pipeline().
 
     Returns:
@@ -98,8 +110,21 @@ def run_pipeline(
 
     ranked_repness = rank_representative_statements(
         grouped_stats_df=base_result.group_comment_stats,
+        vote_matrix=base_result.raw_vote_matrix.loc[
+            base_result.participants_df[base_result.participants_df["to_cluster"]].index,
+            :,
+        ],
+        cluster_labels=base_result.participants_df.loc[
+            base_result.participants_df["to_cluster"], "cluster_id"
+        ].astype(int).tolist(),
         mod_out_statement_ids=kwargs.get("mod_out_statement_ids", []),
         fdr_rate=fdr_rate,
+        divisive_n_resamples=divisive_n_resamples,
+        divisive_random_state=divisive_random_state,
+        strong_effect_min=strong_effect_min,
+        strong_small_group_cutoff=strong_small_group_cutoff,
+        strong_large_group_participation_min=strong_large_group_participation_min,
+        strong_p_max=strong_p_max,
     )
 
     ranked_consensus = rank_consensus_statements(

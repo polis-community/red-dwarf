@@ -13,6 +13,7 @@ theme:
 nav:
   - Home: README.md
   - "API Reference": docs/api_reference.md
+  - "Representative Statement Selection": docs/representative-statement-selection.md
   - Changelog: CHANGELOG.md
 
 markdown_extensions:
