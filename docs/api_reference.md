@@ -149,7 +149,31 @@ use in Scikit-Learn workflows, pipelines, and APIs.
 
 ## Types
 
+### ::: reddwarf.implementations.base.AnalysisSuccess
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.implementations.base.AnalysisInsufficientData
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.implementations.base.InsufficientDataReason
+    options:
+        show_root_heading: true
+
 ### ::: reddwarf.implementations.base.PolisClusteringResult
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.implementations.base.KMeansCandidatesResult
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.implementations.base.KMeansCandidateSuccess
+    options:
+        show_root_heading: true
+
+### ::: reddwarf.implementations.base.KMeansCandidateInsufficientData
     options:
         show_root_heading: true
 

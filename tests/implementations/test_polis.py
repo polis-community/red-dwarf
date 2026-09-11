@@ -1,6 +1,7 @@
 import pytest
 from tests.fixtures import polis_convo_data
 from reddwarf.implementations.polis import run_clustering
+from reddwarf.implementations.base import AnalysisOutcome
 from reddwarf.data_loader import Loader
 from reddwarf.utils.statements import process_statements
 from reddwarf.utils.polismath import extract_data_from_polismath
@@ -62,6 +63,8 @@ def test_run_clustering_real_data_small(polis_convo_data):
         init_centers=init_centers,
         force_group_count=force_group_count,
     )
+    assert result.outcome == AnalysisOutcome.SUCCESS
+    result = result.result
 
     # Check group-aware-consensus calculations.
     calculated = helpers.simulate_api_response(
@@ -153,6 +156,8 @@ def test_run_clustering_is_reproducible(polis_convo_data):
         votes=loader.votes_data,
         mod_out_statement_ids=mod_out_statement_ids,
     )
+    assert cluster_run_1.outcome == AnalysisOutcome.SUCCESS
+    cluster_run_1 = cluster_run_1.result
 
     centers_1 = cluster_run_1.clusterer.cluster_centers_ if cluster_run_1.clusterer else None
 
@@ -161,6 +166,8 @@ def test_run_clustering_is_reproducible(polis_convo_data):
         mod_out_statement_ids=mod_out_statement_ids,
         init_centers=centers_1,
     )
+    assert cluster_run_2.outcome == AnalysisOutcome.SUCCESS
+    cluster_run_2 = cluster_run_2.result
 
     # same number of clusters
     centers_1 = cluster_run_1.clusterer.cluster_centers_ if cluster_run_1.clusterer else []

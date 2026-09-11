@@ -28,6 +28,9 @@ include = ["reddwarf*"]
 # See: https://github.com/ToucanToco/peakina/pull/957/files
 license-files = []
 
+[tool.setuptools.package-data]
+reddwarf = ["py.typed"]
+
 [tool.uv.sources]
 requests-cache = { git = "https://github.com/requests-cache/requests-cache", rev = "12af54ded36" }
 

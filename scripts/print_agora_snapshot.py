@@ -9,6 +9,7 @@ import sys
 
 from reddwarf.data_loader import Loader
 from reddwarf.implementations.agora import run_pipeline
+from reddwarf.implementations.base import AnalysisOutcome
 from reddwarf.utils.consensus import select_consensus_statements
 from reddwarf.utils.statements import process_statements
 from reddwarf.utils.stats import select_representative_statements
@@ -48,6 +49,9 @@ def main():
         meta_statement_ids=meta_statement_ids,
         random_state=42,
     )
+    if result.outcome != AnalysisOutcome.SUCCESS:
+        raise SystemExit(f"Agora pipeline failed: {result.reason.value}")
+    result = result.result
 
     group_ids = sorted(result.ranked_repness.keys())
     n_groups = len(group_ids)

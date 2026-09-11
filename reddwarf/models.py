@@ -1,5 +1,5 @@
 from pydantic import BaseModel, NonNegativeInt, Field, AliasChoices, field_serializer
-from typing import Literal, Optional, TypeAlias, Annotated
+from typing import Literal, Optional, TypeAlias
 from datetime import datetime
 from enum import IntEnum
 
@@ -34,7 +34,7 @@ class Vote(BaseModel):
         serialization_alias="modified",
     )
     conversation_id: Optional[str] = None
-    datetime: Optional[Annotated[str, Field(exclude=True)]] = None
+    datetime: Optional[str] = Field(default=None, exclude=True)
 
 class Statement(BaseModel):
     txt: str = Field(
@@ -77,4 +77,4 @@ class Statement(BaseModel):
     pass_count: Optional[NonNegativeInt] = None
     count: Optional[NonNegativeInt] = None
     conversation_id: Optional[str] = None
-    datetime: Optional[Annotated[str, Field(exclude=True)]] = None
+    datetime: Optional[str] = Field(default=None, exclude=True)

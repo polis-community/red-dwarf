@@ -1,4 +1,4 @@
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 import pandas as pd
 import numpy as np
 from reddwarf.sklearn.model_selection import GridSearchNonCV
@@ -63,6 +63,28 @@ def run_kmeans(
 
     return kmeans
 
+
+def calculate_kmeans_silhouette_score(
+        X_to_cluster: NDArray,
+        labels: ArrayLike,
+) -> float | None:
+    """
+    Score a fitted k-means candidate using the same policy as best-k search.
+
+    Returns None when silhouette is mathematically undefined, -1 when the
+    candidate creates singleton clusters, and the sklearn silhouette otherwise.
+    """
+    label_array = np.asarray(labels)
+    unique, counts = np.unique(label_array, return_counts=True)
+
+    if len(unique) < 2 or len(unique) >= len(label_array):
+        return None
+    if counts.min() < 2:
+        return -1.0
+
+    return float(silhouette_score(X_to_cluster, label_array))
+
+
 def find_best_kmeans(
         X_to_cluster: NDArray,
         k_bounds: RangeLike = [2, 5],
@@ -90,10 +112,8 @@ def find_best_kmeans(
 
     def scoring_function(estimator, X):
         labels = estimator.fit_predict(X)
-        unique, counts = np.unique(labels, return_counts=True)
-        if counts.min() < 2:
-            return -1
-        return silhouette_score(X, labels)
+        score = calculate_kmeans_silhouette_score(X_to_cluster=X, labels=labels)
+        return -1 if score is None else score
 
     search = GridSearchNonCV(
         param_grid=param_grid,

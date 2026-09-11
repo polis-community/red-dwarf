@@ -1,6 +1,10 @@
 import pytest
 import numpy as np
-from reddwarf.utils.clusterer.kmeans import run_kmeans, find_best_kmeans
+from reddwarf.utils.clusterer.kmeans import (
+    calculate_kmeans_silhouette_score,
+    run_kmeans,
+    find_best_kmeans,
+)
 from tests.fixtures import polis_convo_data
 from tests.helpers import transform_base_clusters_to_participant_coords
 import pandas as pd
@@ -25,6 +29,20 @@ def test_find_best_kmeans_rejects_singleton_clusters():
         assert counts.min() >= 2, (
             f"k={best_k} produced singleton cluster(s): {dict(zip(unique, counts))}"
         )
+
+
+def test_calculate_kmeans_silhouette_score_returns_none_when_undefined():
+    X = np.array([[0, 0], [1, 1]])
+    labels = np.array([0, 0])
+
+    assert calculate_kmeans_silhouette_score(X_to_cluster=X, labels=labels) is None
+
+
+def test_calculate_kmeans_silhouette_score_discourages_singleton_clusters():
+    X = np.array([[0, 0], [0, 1], [10, 10]])
+    labels = np.array([0, 0, 1])
+
+    assert calculate_kmeans_silhouette_score(X_to_cluster=X, labels=labels) == -1.0
 
 @pytest.mark.parametrize("polis_convo_data", ["small"], indirect=True)
 def test_run_kmeans_real_data_reproducible(polis_convo_data):

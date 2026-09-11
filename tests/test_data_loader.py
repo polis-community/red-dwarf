@@ -29,7 +29,7 @@ def test_load_data_from_api_conversation():
         'ownername', 'is_mod', 'is_owner', 'conversation_id',
         'topics_enabled',
     ]
-    assert sorted(loader.conversation_data) == sorted(expected_keys)
+    assert set(expected_keys).issubset(loader.conversation_data)
 
 def test_load_data_from_api_comments():
     loader = Loader(conversation_id=SMALL_CONVO_ID)

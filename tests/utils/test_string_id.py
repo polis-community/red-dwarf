@@ -9,7 +9,7 @@ from pandas._testing import assert_dict_equal
 from reddwarf.types.polis import PolisRepness
 from reddwarf.data_loader import Loader
 from reddwarf.utils import matrix as MatrixUtils
-from reddwarf.implementations.base import run_pipeline
+from reddwarf.implementations.base import AnalysisOutcome, run_pipeline
 from reddwarf.implementations.polis import run_clustering
 from reddwarf.utils.statements import process_statements
 from reddwarf.utils.polismath import extract_data_from_polismath
@@ -37,6 +37,8 @@ def test_basic_pipeline_execution_with_string_ids(reducer,polis_convo_data):
        votes = preprocessed_vote_data,
        reducer=reducer
     )
+    assert preprocessed_clustering_result.outcome == AnalysisOutcome.SUCCESS
+    preprocessed_clustering_result = preprocessed_clustering_result.result
 
     # Get preprocessed vote dict
     preprocessed_vote_matrix = preprocessed_clustering_result.raw_vote_matrix.count(axis="columns").to_dict()
@@ -105,6 +107,8 @@ def test_run_pipeline_with_string_statement_ids(polis_convo_data):
         init_centers=init_centers,
         force_group_count=force_group_count,
     )
+    assert result.outcome == AnalysisOutcome.SUCCESS
+    result = result.result
     
     calculated = helpers.simulate_api_response(
         result.statements_df["group-aware-consensus"].items()
@@ -186,6 +190,8 @@ def test_clustering_reproducibility_with_string_ids(polis_convo_data):
         votes=helpers.convert_ids_to_strings(loader.votes_data),
         mod_out_statement_ids=mod_out_statement_ids,
     )
+    assert cluster_run_1.outcome == AnalysisOutcome.SUCCESS
+    cluster_run_1 = cluster_run_1.result
 
     centers_1 = cluster_run_1.clusterer.cluster_centers_ if cluster_run_1.clusterer else None
 
@@ -194,6 +200,8 @@ def test_clustering_reproducibility_with_string_ids(polis_convo_data):
         mod_out_statement_ids=mod_out_statement_ids,
         init_centers=centers_1,
     )
+    assert cluster_run_2.outcome == AnalysisOutcome.SUCCESS
+    cluster_run_2 = cluster_run_2.result
 
     centers_1 = cluster_run_1.clusterer.cluster_centers_ if cluster_run_1.clusterer else []
     centers_2 = cluster_run_2.clusterer.cluster_centers_ if cluster_run_2.clusterer else []
