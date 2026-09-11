@@ -354,8 +354,62 @@ def run_kmeans_on_pca_projection(
     pick_max: int = 5,
     confidence: float = 0.9,
     consensus_mode: Literal["standard", "legacy"] = "standard",
+) -> TypedPolisClusteringResult:
+    """Run one forced-k candidate, or return a typed insufficient-data reason."""
+    coordinates = projection.participants_df.loc[
+        projection.participant_ids_to_cluster, ["x", "y"]
+    ].values
+    reason = _get_projected_kmeans_insufficient_reason(
+        participant_count=len(coordinates),
+        unique_point_count=len(np.unique(coordinates, axis=0)),
+        force_group_count=force_group_count,
+    )
+    if reason is not None:
+        return AnalysisInsufficientData(
+            outcome=AnalysisOutcome.INSUFFICIENT_DATA,
+            reason=reason,
+        )
+    return AnalysisSuccess(
+        outcome=AnalysisOutcome.SUCCESS,
+        result=_run_kmeans_on_pca_projection(
+            projection=projection,
+            force_group_count=force_group_count,
+            init_centers=init_centers,
+            random_state=random_state,
+            mod_out_statement_ids=mod_out_statement_ids,
+            pick_max=pick_max,
+            confidence=confidence,
+            consensus_mode=consensus_mode,
+        ),
+    )
+
+
+def _get_projected_kmeans_insufficient_reason(
+    *,
+    participant_count: int,
+    unique_point_count: int,
+    force_group_count: int | None,
+) -> InsufficientDataReason | None:
+    if participant_count < 2:
+        return InsufficientDataReason.NOT_ENOUGH_CLUSTERABLE_PARTICIPANTS
+    if force_group_count is not None and participant_count < force_group_count:
+        return InsufficientDataReason.NOT_ENOUGH_SAMPLES_FOR_GROUP_COUNT
+    if unique_point_count < max(2, force_group_count or 2):
+        return InsufficientDataReason.NOT_ENOUGH_UNIQUE_POINTS
+    return None
+
+
+def _run_kmeans_on_pca_projection(
+    *,
+    projection: PcaProjectionResult,
+    force_group_count: int,
+    init_centers: Optional[list[list[float]]] = None,
+    random_state: Optional[int] = None,
+    mod_out_statement_ids: list[int] | None = None,
+    pick_max: int = 5,
+    confidence: float = 0.9,
+    consensus_mode: Literal["standard", "legacy"] = "standard",
 ) -> PolisClusteringResult:
-    """Run one forced-k k-means candidate from an already prepared PCA projection."""
     clusterer_model = run_clusterer(
         clusterer="kmeans",
         X_participants_clusterable=projection.participants_df.loc[
@@ -394,10 +448,10 @@ def run_kmeans_candidates_on_pca_projection(
         max_group_count=max_group_count,
         candidate_group_counts=candidate_group_counts,
     )
-    clusterable_values = projection.filtered_vote_matrix.loc[
+    clusterable_values = projection.participants_df.loc[
         projection.participant_ids_to_cluster,
-        :,
-    ].fillna(0).values
+        ["x", "y"],
+    ].values
     unique_point_count = len(np.unique(clusterable_values, axis=0))
     participant_count = len(projection.participant_ids_to_cluster)
     candidates: list[
@@ -405,26 +459,22 @@ def run_kmeans_candidates_on_pca_projection(
     ] = []
 
     for group_count in group_counts:
-        if participant_count < group_count:
+        reason = _get_projected_kmeans_insufficient_reason(
+            participant_count=participant_count,
+            unique_point_count=unique_point_count,
+            force_group_count=group_count,
+        )
+        if reason is not None:
             candidates.append(
                 KMeansCandidateInsufficientData(
                     group_count=group_count,
                     outcome=AnalysisOutcome.INSUFFICIENT_DATA,
-                    reason=InsufficientDataReason.NOT_ENOUGH_SAMPLES_FOR_GROUP_COUNT,
-                )
-            )
-            continue
-        if unique_point_count < group_count:
-            candidates.append(
-                KMeansCandidateInsufficientData(
-                    group_count=group_count,
-                    outcome=AnalysisOutcome.INSUFFICIENT_DATA,
-                    reason=InsufficientDataReason.NOT_ENOUGH_UNIQUE_POINTS,
+                    reason=reason,
                 )
             )
             continue
 
-        result = run_kmeans_on_pca_projection(
+        result = _run_kmeans_on_pca_projection(
             projection=projection,
             force_group_count=group_count,
             init_centers=init_centers,
@@ -570,30 +620,27 @@ def run_pipeline(
             ),
         )
 
-    return AnalysisSuccess(
-        outcome=AnalysisOutcome.SUCCESS,
-        result=_run_pipeline_success(
-            votes=votes,
-            reducer=reducer,
-            reducer_kwargs=reducer_kwargs,
-            clusterer=clusterer,
-            clusterer_kwargs=clusterer_kwargs,
-            mod_out_statement_ids=mod_out_statement_ids,
-            meta_statement_ids=meta_statement_ids,
-            min_user_vote_threshold=min_user_vote_threshold,
-            keep_participant_ids=keep_participant_ids,
-            init_centers=init_centers,
-            max_group_count=max_group_count,
-            force_group_count=force_group_count,
-            random_state=random_state,
-            pick_max=pick_max,
-            confidence=confidence,
-            consensus_mode=consensus_mode,
-        ),
+    return _run_single_pipeline(
+        votes=votes,
+        reducer=reducer,
+        reducer_kwargs=reducer_kwargs,
+        clusterer=clusterer,
+        clusterer_kwargs=clusterer_kwargs,
+        mod_out_statement_ids=mod_out_statement_ids,
+        meta_statement_ids=meta_statement_ids,
+        min_user_vote_threshold=min_user_vote_threshold,
+        keep_participant_ids=keep_participant_ids,
+        init_centers=init_centers,
+        max_group_count=max_group_count,
+        force_group_count=force_group_count,
+        random_state=random_state,
+        pick_max=pick_max,
+        confidence=confidence,
+        consensus_mode=consensus_mode,
     )
 
 
-def _run_pipeline_success(
+def _run_single_pipeline(
     votes: list[dict],
     reducer: ReducerType = "pca",
     reducer_kwargs: dict = {},
@@ -610,7 +657,7 @@ def _run_pipeline_success(
     pick_max: int = 5,
     confidence: float = 0.9,
     consensus_mode: Literal["standard", "legacy"] = "standard",
-) -> PolisClusteringResult:
+) -> TypedPolisClusteringResult:
     raw_vote_matrix = generate_raw_matrix(votes=votes)
 
     filtered_vote_matrix = simple_filter_matrix(
@@ -638,9 +685,24 @@ def _run_pipeline_success(
             list(set(participant_ids_to_cluster + keep_participant_ids_existing))
         )
 
+    clusterable_coordinates = participants_df.loc[participant_ids_to_cluster, :].values
+    if clusterer == "kmeans":
+        unique_point_count = len(np.unique(clusterable_coordinates, axis=0))
+        reason = _get_projected_kmeans_insufficient_reason(
+            participant_count=len(clusterable_coordinates),
+            unique_point_count=unique_point_count,
+            force_group_count=force_group_count,
+        )
+        if reason is not None:
+            return AnalysisInsufficientData(
+                outcome=AnalysisOutcome.INSUFFICIENT_DATA,
+                reason=reason,
+            )
+        max_group_count = min(max_group_count, unique_point_count)
+
     clusterer_model = run_clusterer(
         clusterer=clusterer,
-        X_participants_clusterable=participants_df.loc[participant_ids_to_cluster, :].values,
+        X_participants_clusterable=clusterable_coordinates,
         max_group_count=max_group_count,
         force_group_count=force_group_count,
         init_centers=init_centers,
@@ -715,7 +777,7 @@ def _run_pipeline_success(
         confidence=confidence,
     )
 
-    return PolisClusteringResult(
+    result = PolisClusteringResult(
         participant_projections=participant_projections,
         statement_projections=statement_projections,
         group_aware_consensus=group_aware_consensus,
@@ -731,3 +793,4 @@ def _run_pipeline_success(
         statements_df=statements_df,
         participants_df=participants_df,
     )
+    return AnalysisSuccess(outcome=AnalysisOutcome.SUCCESS, result=result)

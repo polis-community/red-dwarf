@@ -315,6 +315,8 @@ def test_pca_projection_can_be_reused_for_forced_kmeans(polis_convo_data):
     )
     assert direct.outcome == AnalysisOutcome.SUCCESS
     direct = direct.result
+    assert reused.outcome == AnalysisOutcome.SUCCESS
+    reused = reused.result
 
     assert_frame_equal(
         reused.participants_df.loc[:, ["x", "y", "to_cluster", "cluster_id"]],
@@ -332,6 +334,8 @@ def test_projection_silhouette_score_api(polis_convo_data):
         projection=projection,
         force_group_count=2,
     )
+    assert result.outcome == AnalysisOutcome.SUCCESS
+    result = result.result
 
     score = calculate_projection_silhouette_score(
         projection=projection,
