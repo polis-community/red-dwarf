@@ -2,6 +2,17 @@
 
 ## [Unreleased][] (YYYY-MM-DD)
 
+### Fixes
+
+- Replace the old Git-pinned requests-cache with a maintained release and constrain
+  the documentation highlighter on Python 3.10 to its compatible API.
+- Preserve unavailable statement moderation as `None` instead of rejecting public
+  API responses or inventing a moderation decision. Strict moderation processing
+  requires known statuses.
+- Supplement CSV metadata without discarding CSV statements or moderation fields
+  omitted by the public API. Update live compatibility checks for additive math
+  fields and the unsupported upstream importance-vote export column.
+
 ### Changes
 
 - Return typed insufficient-data outcomes when projected participants cannot form

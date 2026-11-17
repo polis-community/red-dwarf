@@ -22,6 +22,9 @@ def process_statements(
         mod_out_statement_ids (list): List of statement IDs to moderate out
         meta_statement_ids (list): List of meta statement IDs
 
+    Raises:
+        ValueError: Strict moderation is requested but moderation metadata is unavailable.
+
     """
     mod_in_statement_ids = []
     mod_out_statement_ids = []
@@ -33,6 +36,16 @@ def process_statements(
         .set_index('statement_id')
         .sort_index()
     )
+
+    if (
+        not polis_backward_compat
+        and is_strict_moderation
+        and statements_df["moderated"].isna().any()
+    ):
+        raise ValueError(
+            "Strict moderation requires moderation metadata for every statement; "
+            "use a data source that includes moderation status."
+        )
 
     if polis_backward_compat:
         mod_in_types =  [ ModeratedEnum.APPROVED ]
