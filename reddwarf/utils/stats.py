@@ -215,9 +215,6 @@ def beats_best_by_repness_test(
     current_best_z. Used for ensuring at least one representative comment for every group,
     even if none remain after more thorough filters.
     """
-    if this_row["na"] == 0 and this_row["nd"] == 0:
-        return False
-
     if best_row is not None:
         this_repness_test = max(this_row["rat"], this_row["rdt"])
         best_repness_test = max(best_row["rat"], best_row["rdt"])
@@ -237,16 +234,14 @@ def beats_best_of_agrees(
     focus solely on repness, but also on raw probability of agreement, so as to
     ensure that there is some representation of what people in the group agree on.
     """
-    # Recheck every candidate: multiplying two negative z-scores can otherwise
-    # make a disagreement statement replace an existing agreement headline.
-    if this_row["na"] == 0 or this_row["pa"] <= 0.5:
-        return False
-    if not (is_significant(this_row["pat"], confidence) or this_row["ra"] > 1.0):
+    # Explicitly don't allow something that hasn't been voted on at all
+    if this_row["na"] == 0 and this_row["nd"] == 0:
         return False
 
     if best_row is not None:
         if best_row["ra"] > 1.0:
             # If we have a current_best by representativeness estimate, use the more robust measurement
+            # Preserve upstream's product, including positive scores from two negatives.
             repness_metric_agr = (
                 lambda row: row["ra"] * row["rat"] * row["pa"] * row["pat"]
             )
@@ -256,7 +251,11 @@ def beats_best_of_agrees(
             prob_metric = lambda row: row["pa"] * row["pat"]
             return prob_metric(this_row) > prob_metric(best_row)
 
-    return True
+    # Otherwise, accept if either repness or probability look generally good.
+    # TODO: Hardcode significance at 90%, so lways one statement for group?
+    return is_significant(this_row["pat"], confidence) or (
+        this_row["ra"] > 1.0 and this_row["pa"] > 0.5
+    )
 
 
 # For making it more legible to get index of agree/disagree votes in numpy array.
@@ -449,19 +448,13 @@ def calculate_comment_statistics(
     )
 
 
-def format_comment_stats(
-    statement: pd.Series,
-    *,
-    direction: Literal["agree", "disagree"] | None = None,
-) -> PolisRepnessStatement:
+def format_comment_stats(statement: pd.Series) -> PolisRepnessStatement:
     """
     Format internal statistics into concise agree/disagree format.
     Uses either consensus style or group-repness style depending on available fields.
 
     Args:
         statement (pd.Series): A dataframe row with statement stats in verbose format.
-        direction: Explicit direction for a directional selection such as best-agree.
-            If omitted, choose the direction with the higher test statistic.
 
     Returns:
         PolisRepnessStatement: A dict with keys matching expected Polis format.
@@ -485,16 +478,17 @@ def format_comment_stats(
         "repness-test": "rdt",
     }
 
-    if direction is None:
-        if format_style == "group-repness":
-            score_agree = float(statement["rat"])
-            score_disagree = float(statement["rdt"])
-        else:
-            score_agree = float(statement["pat"])
-            score_disagree = float(statement["pdt"])
-        direction = "agree" if score_agree > score_disagree else "disagree"
+    # Select score source
+    if format_style == "group-repness":
+        score_agree = float(statement["rat"])
+        score_disagree = float(statement["rdt"])
+    else:
+        score_agree = float(statement["pat"])
+        score_disagree = float(statement["pdt"])
 
-    fields = agree_fields if direction == "agree" else disagree_fields
+    use_agree = score_agree > score_disagree
+    fields = agree_fields if use_agree else disagree_fields
+    direction = "agree" if use_agree else "disagree"
 
     result = {
         "tid": int(statement["statement_id"]),
@@ -692,8 +686,10 @@ def select_representative_statements(
     """
     Selects statistically representative statements from each group cluster.
 
-    Follows Polis selection, except that agreement headlines keep agree-side
-    fields and candidates without agree/disagree votes are excluded from fallback.
+    Preserves Polis's legacy best-agree and fallback behavior: a best-agree
+    headline may be formatted as disagree, and fallback may select a statement
+    without directional votes. These quirks are characterized in
+    tests/utils/test_representative_statements.py, not corrected in this selector.
 
     Args:
         grouped_stats_df (pd.DataFrame): MultiIndex Dataframe of statement statistics, indexed by group and statement.
@@ -748,7 +744,7 @@ def select_representative_statements(
 
         if best_agree is not None:
             n_agree = int(best_agree["na"])
-            best_agree = format_comment_stats(best_agree, direction="agree")
+            best_agree = format_comment_stats(best_agree)
             best_agree.update({"n-agree": n_agree, "best-agree": True})
             best_head = [best_agree]
         elif best_overall is not None:

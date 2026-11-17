@@ -1,3 +1,10 @@
+"""Polis port regressions and intentional legacy-behavior characterization.
+
+Expected legacy behavior follows beats-best-agr?, finalize-cmt-stats, and
+select-rep-comments in upstream math/src/polismath/math/repness.clj:
+https://github.com/compdemocracy/polis/blob/7bf9eccc287586e51d96fdf519ae6da98e0f4a70/math/src/polismath/math/repness.clj
+"""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -40,8 +47,8 @@ def test_select_representative_statements_keeps_disagreement_without_best_agree(
 
 
 @pytest.mark.parametrize("vote", [0, np.nan], ids=["pass-only", "unvoted"])
-def test_select_representative_statements_excludes_no_directional_votes(vote):
-    """Fallback selection must not manufacture agree/disagree evidence."""
+def test_legacy_fallback_can_select_without_directional_votes(vote):
+    """Characterize upstream fallback, not desirable Agora selection semantics."""
     vote_matrix = pd.DataFrame({7: [vote] * 10})
     grouped_stats, _ = stats.calculate_comment_statistics_dataframes(
         vote_matrix=vote_matrix,
@@ -51,11 +58,20 @@ def test_select_representative_statements_excludes_no_directional_votes(vote):
 
     result = stats.select_representative_statements(grouped_stats_df=grouped_stats)
 
-    assert result == {0: [], 1: []}
+    expected_trials = 5 if vote == 0 else 0
+    for statements in result.values():
+        assert len(statements) == 1
+        statement = statements[0]
+        assert statement["tid"] == 7
+        assert statement["repful-for"] == "disagree"
+        assert statement["n-success"] == 0
+        assert statement["n-trials"] == expected_trials
+        assert statement["p-success"] == pytest.approx(1 / (expected_trials + 2))
+        assert "best-agree" not in statement
 
 
-def test_select_representative_statements_keeps_voted_fallback():
-    """An insufficient but voted statement is still eligible for fallback."""
+def test_legacy_fallback_keeps_first_candidate_when_repness_tests_tie():
+    """The legacy fallback can retain a pass-only candidate before a voted one."""
     vote_matrix = pd.DataFrame(
         {
             7: [0] * 8,
@@ -73,16 +89,16 @@ def test_select_representative_statements_keeps_voted_fallback():
     for statements in result.values():
         assert len(statements) == 1
         statement = statements[0]
-        assert statement["tid"] == 8
-        assert statement["n-success"] == 1
-        assert statement["n-trials"] == 2
+        assert statement["tid"] == 7
+        assert statement["n-success"] == 0
+        assert statement["n-trials"] == 4
         assert "best-agree" not in statement
 
 
-def test_select_representative_statements_best_agree_rejects_disagreement(
+def test_legacy_best_agree_can_select_unanimous_disagreement(
     mixed_direction_data,
 ):
-    """Two negative z-scores must not turn disagreement into best-agree."""
+    """Preserve upstream's multiplication of two negative agreement z-scores."""
     _, grouped_stats = mixed_direction_data
 
     result = stats.select_representative_statements(grouped_stats_df=grouped_stats)
@@ -91,12 +107,9 @@ def test_select_representative_statements_best_agree_rejects_disagreement(
     ]
 
     assert len(best_agrees) == 1
-    assert best_agrees[0]["tid"] == 7
-    assert best_agrees[0]["repful-for"] == "agree"
-    assert any(
-        statement["tid"] == 8 and statement["repful-for"] == "disagree"
-        for statement in result[0]
-    )
+    assert best_agrees[0]["tid"] == 8
+    assert best_agrees[0]["repful-for"] == "disagree"
+    assert best_agrees[0]["n-success"] == 20
 
 
 def test_select_representative_statements_best_agree_count_matches_votes(
@@ -113,11 +126,12 @@ def test_select_representative_statements_best_agree_count_matches_votes(
     statement = best_agrees[0]
     expected_agrees = int((vote_matrix.loc[:19, statement["tid"]] == 1).sum())
     assert statement["n-agree"] == expected_agrees
-    assert statement["n-success"] == expected_agrees
+    assert statement["n-success"] == 20
+    assert statement["n-agree"] != statement["n-success"]
 
 
-def test_select_representative_statements_shared_agreement_keeps_agree_fields():
-    """Best-agree describes agreement even when groups agree equally."""
+def test_legacy_best_agree_preserves_disagree_direction_on_equal_repness():
+    """Upstream finalize-cmt-stats chooses disagree when rat and rdt tie."""
     vote_matrix = pd.DataFrame({7: [1] * 40})
     grouped_stats, _ = stats.calculate_comment_statistics_dataframes(
         vote_matrix=vote_matrix,
@@ -131,10 +145,10 @@ def test_select_representative_statements_shared_agreement_keeps_agree_fields():
         assert len(statements) == 1
         statement = statements[0]
         assert statement["best-agree"] is True
-        assert statement["repful-for"] == "agree"
+        assert statement["repful-for"] == "disagree"
         assert statement["n-agree"] == 20
-        assert statement["n-success"] == 20
-        assert statement["p-success"] == pytest.approx(21 / 22)
+        assert statement["n-success"] == 0
+        assert statement["p-success"] == pytest.approx(1 / 22)
 
 
 def test_select_representative_statements_respects_moderation(mixed_direction_data):

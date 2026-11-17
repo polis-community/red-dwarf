@@ -4,13 +4,13 @@
 
 ### Fixes
 
-- Preserve significant disagreement statements when a group has no best-agree
-  headline.
-- Exclude pass-only and unvoted statements from representative fallback selection.
-- Require agreement candidates for best-agree, preserve their agree-side fields,
-  and report their actual agreement counts. These edge-case corrections
-  intentionally differ from upstream's legacy best-agree/fallback behavior;
-  legacy consensus calculations remain unchanged.
+- Restore Polis selector parity: preserve sufficient disagreement statements
+  without a best-agree headline and populate `n-agree` from the original agree
+  count rather than the direction-dependent `n-success`.
+- Add regression tests for those port defects and characterization tests for
+  upstream's best-agree, direction-tie, and no-directional-vote fallback quirks.
+  These legacy quirks remain unchanged; Agora's selection and consensus
+  algorithms are not modified.
 
 ### Changes
 
