@@ -20,8 +20,8 @@ A <em>DIM</em>ensional <em>RED</em>uction library for reproducing and experiment
 
 - Loads Polis conversation data from APIs, CSV exports, or saved JSON.
 - Two pipeline implementations:
-  - **"Polis" pipeline** = Legacy compatibility baseline: PCA, KMeans, and heuristic statement selection, tested against saved Polis API results within the limits below.
-  - **"Agora" pipeline** = An alternative intended to address selection edge cases, using [Benjamini-Hochberg][bh-wiki] selection, effective agreement group-aware consensus, and [Simes'][simes-wiki] p-value combination.
+  - **Polis-compatible pipeline** = Legacy compatibility baseline: PCA, KMeans, and heuristic statement selection, tested against saved Polis API results within the limits below.
+  - **Agora enhanced pipeline** = Targeted improvements to statement selection and consensus scoring, using [Benjamini-Hochberg][bh-wiki] selection, effective agreement group-aware consensus, and [Simes'][simes-wiki] p-value combination.
 - Alternative algorithms, aspiring for sensible defaults:
   - dimensional reduction: [PaCMAP & LocalMAP][pacmap]
     - Planned: [UMAP][umap], [TriMap][trimap], [PHATE][], [ivis][ivis], [LargeVis][largevis]
@@ -30,14 +30,18 @@ A <em>DIM</em>ensional <em>RED</em>uction library for reproducing and experiment
 - Helpful visualizations via `matplotlib`
   - Planned: [Plotly][plotly]
 
-## Polis vs Agora
+## Polis-compatible vs Agora enhanced
+
+These names refer to **Red-Dwarf analysis pipelines**, not the Polis or Agora
+platforms (see the [glossary](GLOSSARY.md)). Existing Python imports remain
+`reddwarf.implementations.polis` and `reddwarf.implementations.agora`.
 
 Both pipelines share the same core (PCA + KMeans by default), but differ in
-**statement selection** and **consensus scoring**. Polis preserves legacy behavior
-for comparison; Agora aims to avoid the edge cases below rather than reproduce
-every upstream heuristic.
+**statement selection** and **consensus scoring**. The Polis-compatible pipeline
+preserves legacy behavior for comparison; the Agora enhanced pipeline addresses
+the edge cases below rather than reproducing every upstream heuristic.
 
-| Feature | Polis | Agora |
+| Feature | Polis-compatible | Agora enhanced |
 |---------|-------|-------|
 | **Statement selection** | Heuristics and fallbacks; `pick_max=5` by default | Benjamini-Hochberg selection; no fixed number per group |
 | **Evidence** | z-score thresholds and best-agree heuristic | Simes combination of probability and representativeness p-values |
@@ -45,17 +49,18 @@ every upstream heuristic.
 | **Output** | Selected statements only | Ranked candidates with `selected` flags; moderated-out statements excluded |
 
 Here, `pa` and `pd` are smoothed agreement/disagreement probabilities per group,
-and `n` is the number of groups. Agora's top-level `group_aware_consensus` is
-recomputed from group statistics; its smoothing differs from the default standard-mode
-consensus columns in `statements_df`, so these outputs should not be assumed interchangeable.
+and `n` is the number of groups. The Agora enhanced pipeline's top-level
+`group_aware_consensus` is recomputed from group statistics; its smoothing differs
+from the default standard-mode consensus columns in `statements_df`, so these
+outputs should not be assumed interchangeable.
 
 ### Selection edge cases
 
-The [Polis selector tests][polis-selector-tests] characterize inherited quirks.
+The [Polis-compatible selector tests][polis-selector-tests] characterize inherited quirks.
 The [paired pipeline tests][pipeline-selection-tests] run both public pipelines
 on identical synthetic votes, seed two groups, and verify matching memberships:
 
-| Case | Polis compatibility behavior | Agora behavior in these tests |
+| Case | Polis-compatible behavior | Agora enhanced behavior in these tests |
 |------|------------------------------|-------------------------------|
 | 0 agree / 20 disagree | Can receive `best-agree=True` despite a disagreement label | Selected as disagreement, with explicit agree/disagree counts and no best-agree flag |
 | Unanimous agreement shared by both groups | Equal representativeness scores can format best-agree as disagreement | Labeled agreement |
@@ -63,9 +68,9 @@ on identical synthetic votes, seed two groups, and verify matching memberships:
 
 Both pipelines also retain strong disagreement without an agreement headline.
 Red-Dwarf port bugs that dropped such results or misreported `n-agree` have been
-fixed in the **Polis** path too; inherited quirks remain for compatibility.
-Consumers of Agora's rankings must respect `selected`, not treat every candidate
-as a recommendation.
+fixed in the **Polis-compatible pipeline** too; inherited quirks remain for
+compatibility. Consumers of the Agora enhanced pipeline's rankings must respect
+`selected`, not treat every candidate as a recommendation.
 
 These tests show targeted improvements, not overall statistical superiority or
 end-to-end FDR calibration. Simes/BH guarantees depend on their assumptions;
@@ -89,7 +94,7 @@ compatibility, not full-pipeline parity on arbitrary live conversations.
 
 ### Base clusters and eventual display buckets
 
-Polis first compresses participant projections into up to 100 **base clusters**
+The Polis platform first compresses participant projections into up to 100 **base clusters**
 by default, then discovers opinion groups from their weighted centers. This is a
 scaling approximation, not just a way to draw fewer dots.
 
@@ -104,7 +109,7 @@ discovery and before export/rendering. They would reduce the number of points
 drawn without changing group memberships or analysis statistics. This is not
 implemented yet, and would not reproduce Polis's computational base clustering.
 
-Agora roadmap: cleaner input/output APIs, improved default algorithms, reduced DataFrame complexity, and richer outputs.
+Agora enhanced roadmap: cleaner input/output APIs, improved default algorithms, reduced DataFrame complexity, and richer outputs.
 
 ## Goals
 
@@ -138,7 +143,7 @@ Are you or your organization eager to see more platforms and community built aro
 ```
 # OFFICIAL RELEASES
 
-# For core, the classic polis pipeline: PCA + K-means
+# For core, the Polis-compatible pipeline: PCA + K-means
 # (~60MB beyond scikit-learn disk space)
 pip install red-dwarf
 
@@ -153,7 +158,7 @@ pip install red-dwarf[all]
 # pip install red-dwarf[alt-algos,plots]
 ```
 
-See [`docs/notebooks/agora-demo.ipynb`][agora-notebook] for the recommended quickstart using the Agora pipeline.
+See [`docs/notebooks/agora-demo.ipynb`][agora-notebook] for the recommended quickstart using the Agora enhanced pipeline.
 
 For the Polis compatibility baseline, see [`docs/notebooks/polis-implementation-demo.ipynb`][polis-notebook] and the [testing limits above](#how-polis-compatibility-is-tested).
 
@@ -161,8 +166,8 @@ For the Polis compatibility baseline, see [`docs/notebooks/polis-implementation-
 |---|---|
 | [![screen of the sample jupyter notebook](docs/notebook-screenshot.png)][polis-notebook] | ![screenshot of the polis report](https://imgur.com/blkIEtW.png) |
 
-- [`docs/notebooks/agora-demo.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/agora-demo.ipynb) — Agora pipeline quickstart _(recommended)_
-- [`docs/notebooks/polis-implementation-demo.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/polis-implementation-demo.ipynb) — Classic Polis pipeline baseline
+- [`docs/notebooks/agora-demo.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/agora-demo.ipynb) — Agora enhanced pipeline quickstart _(recommended)_
+- [`docs/notebooks/polis-implementation-demo.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/polis-implementation-demo.ipynb) — Polis-compatible pipeline baseline
 - [`docs/notebooks/loading-data.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/loading-data.ipynb)
 - [`docs/notebooks/heatmap.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/heatmap.ipynb)
 - [`docs/notebooks/dump-downloaded-polis-data.ipynb`](https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/dump-downloaded-polis-data.ipynb)
