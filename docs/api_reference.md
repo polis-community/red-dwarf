@@ -8,6 +8,8 @@
 
 ## `reddwarf.implementations.agora`
 
+The **Agora enhanced pipeline**. Its existing Python module name is unchanged.
+
 ### ::: reddwarf.implementations.agora.run_pipeline
     options:
         show_root_heading: true
@@ -21,6 +23,8 @@
         show_root_heading: true
 
 ## `reddwarf.implementations.polis`
+
+The **Polis-compatible pipeline**. Its existing Python module name is unchanged.
 
 ### ::: reddwarf.implementations.polis.run_pipeline
     options:
