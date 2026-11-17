@@ -2,6 +2,16 @@
 
 ## [Unreleased][] (YYYY-MM-DD)
 
+### Fixes
+
+- Preserve significant disagreement statements when a group has no best-agree
+  headline.
+- Exclude pass-only and unvoted statements from representative fallback selection.
+- Require agreement candidates for best-agree, preserve their agree-side fields,
+  and report their actual agreement counts. These edge-case corrections
+  intentionally differ from upstream's legacy best-agree/fallback behavior;
+  legacy consensus calculations remain unchanged.
+
 ### Changes
 
 - Return typed insufficient-data outcomes when projected participants cannot form
