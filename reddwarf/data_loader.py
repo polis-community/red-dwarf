@@ -207,7 +207,8 @@ class Loader:
         - comments.csv: Statement data
         - votes.csv: Vote records
 
-        Handles missing is_meta field by falling back to API data when necessary.
+        Supplements missing is_meta fields from API data when available, preserving
+        CSV statements and moderation metadata that the public API may omit.
         Automatically filters duplicate votes, keeping the most recent.
 
         Raises:
@@ -231,13 +232,30 @@ class Loader:
             import warnings
 
             warnings.warn(
-                "CSV import is missing is_meta field. Attempting to load comments data from API instead..."
+                "CSV import is missing is_meta field. Attempting to supplement it from the API..."
             )
             try:
                 if self.report_id and not self.conversation_id:
                     self.load_api_data_report()
                     self.conversation_id = self.report_data["conversation_id"]
+                csv_comments = self.comments_data
                 self.load_api_data_comments()
+                api_comments = {
+                    comment["statement_id"]: comment for comment in self.comments_data
+                }
+                self.comments_data = [
+                    {
+                        **comment,
+                        **{
+                            field: value
+                            for field, value in api_comments.get(
+                                comment["statement_id"], {}
+                            ).items()
+                            if comment.get(field) is None
+                        },
+                    }
+                    for comment in csv_comments
+                ]
             except Exception:
                 raise ValueError(
                     " ".join(

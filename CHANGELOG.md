@@ -4,6 +4,15 @@
 
 ### Fixes
 
+- Replace the old Git-pinned requests-cache with a maintained release and constrain
+  the documentation highlighter on Python 3.10 to its compatible API.
+- Preserve unavailable statement moderation as `None` instead of rejecting public
+  API responses or inventing a moderation decision. Strict moderation processing
+  requires known statuses.
+- Supplement CSV metadata without discarding CSV statements or moderation fields
+  omitted by the public API. Update live compatibility checks for additive math
+  fields and the unsupported upstream importance-vote export column.
+
 - Restore Polis selector parity: preserve sufficient disagreement statements
   without a best-agree headline and populate `n-agree` from the original agree
   count rather than the direction-dependent `n-success`.

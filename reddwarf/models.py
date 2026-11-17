@@ -1,4 +1,11 @@
-from pydantic import BaseModel, NonNegativeInt, Field, AliasChoices, field_serializer
+from pydantic import (
+    BaseModel,
+    NonNegativeInt,
+    Field,
+    AliasChoices,
+    field_serializer,
+    field_validator,
+)
 from typing import Literal, Optional, TypeAlias
 from datetime import datetime
 from enum import IntEnum
@@ -62,9 +69,18 @@ class Statement(BaseModel):
         serialization_alias="participant_id",
     )
     velocity: Optional[Literal[1]] = None
-    moderated: ModeratedEnum = Field(
+    # Public API responses can omit moderation metadata; absence is not approval.
+    moderated: Optional[ModeratedEnum] = Field(
+        default=None,
         validation_alias=AliasChoices('moderated', 'mod'),
     )
+
+    @field_validator("moderated", mode="before")
+    @classmethod
+    def parse_empty_moderation(cls, value):
+        # CSV exports represent unavailable moderation metadata as an empty cell.
+        return None if value == "" else value
+
     active: Optional[bool] = None
     agree_count: Optional[NonNegativeInt] = Field(
         validation_alias=AliasChoices('agree_count', 'agrees'),
