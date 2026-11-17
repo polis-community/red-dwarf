@@ -13,6 +13,14 @@
   omitted by the public API. Update live compatibility checks for additive math
   fields and the unsupported upstream importance-vote export column.
 
+- Restore Polis selector parity: preserve sufficient disagreement statements
+  without a best-agree headline and populate `n-agree` from the original agree
+  count rather than the direction-dependent `n-success`.
+- Add regression tests for those port defects and characterization tests for
+  upstream's best-agree, direction-tie, and no-directional-vote fallback quirks.
+  These legacy quirks remain unchanged; Agora's selection and consensus
+  algorithms are not modified.
+
 ### Changes
 
 - Return typed insufficient-data outcomes when projected participants cannot form

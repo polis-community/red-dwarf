@@ -241,6 +241,7 @@ def beats_best_of_agrees(
     if best_row is not None:
         if best_row["ra"] > 1.0:
             # If we have a current_best by representativeness estimate, use the more robust measurement
+            # Preserve upstream's product, including positive scores from two negatives.
             repness_metric_agr = (
                 lambda row: row["ra"] * row["rat"] * row["pa"] * row["pat"]
             )
@@ -685,7 +686,10 @@ def select_representative_statements(
     """
     Selects statistically representative statements from each group cluster.
 
-    This is expected to match the Polis outputs when all defaults are set.
+    Preserves Polis's legacy best-agree and fallback behavior: a best-agree
+    headline may be formatted as disagree, and fallback may select a statement
+    without directional votes. These quirks are characterized in
+    tests/utils/test_representative_statements.py, not corrected in this selector.
 
     Args:
         grouped_stats_df (pd.DataFrame): MultiIndex Dataframe of statement statistics, indexed by group and statement.
@@ -739,8 +743,9 @@ def select_representative_statements(
             )
 
         if best_agree is not None:
+            n_agree = int(best_agree["na"])
             best_agree = format_comment_stats(best_agree)
-            best_agree.update({"n-agree": best_agree["n-success"], "best-agree": True})
+            best_agree.update({"n-agree": n_agree, "best-agree": True})
             best_head = [best_agree]
         elif best_overall is not None:
             best_overall = format_comment_stats(best_overall)
@@ -748,13 +753,11 @@ def select_representative_statements(
         else:
             best_head = []
 
-        selected = best_head
-        selected = selected + [
+        head_statement_ids = {statement["tid"] for statement in best_head}
+        selected = best_head + [
             row.to_dict()
             for _, row in sufficient_statements.iterrows()
-            if best_head
-            # Skip any statements already in best_head
-            and best_head[0]["tid"] != row["tid"]
+            if row["tid"] not in head_statement_ids
         ]
         selected = selected[:pick_max]
         # Does the work of agrees-before-disagrees sort in polismath, since "a" before "d".
